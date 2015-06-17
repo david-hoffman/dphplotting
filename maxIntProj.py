@@ -40,11 +40,12 @@ def maxIntProj(data, **kwargs):
 
 def _maxIntProj2D(data, takelog=False):
     #set up the grid for the subplots
-    gs = gridspec.GridSpec(2,2,width_ratios=[1, myShape[0]/myShape[2]],
-                           height_ratios=[1, myShape[0]/myShape[1]])
+    myShape = data.shape
+    gs = gridspec.GridSpec(2,2,width_ratios=[2,1],
+                           height_ratios=[1, 2])
     
     #set up my canvas
-    fig = plt.figure(figsize=(5,5)) #necessary to make the overall figure shape square,
+    fig = plt.figure(figsize=(5*myShape[1]/myShape[0],5)) #necessary to make the overall figure shape square,
                             #without this the boxes aren't sized properly
     # Max X and Y
     maxY = np.amax(data,axis=0)    
@@ -66,7 +67,9 @@ def _maxIntProj2D(data, takelog=False):
     ax_X.set_title('X')
     ax_X.axis('tight')
     
-    fig.tight_layout()
+    #The MacOSX backend cannot be used interactively with `tight_layout()`
+    if(matplotlib.get_backend() != 'MacOSX'):
+        fig.tight_layout()
     
     
 def _maxIntProj3D(data, takelog=False):
@@ -81,7 +84,7 @@ def _maxIntProj3D(data, takelog=False):
     gs = gridspec.GridSpec(2,2,width_ratios=[1, myShape[0]/myShape[2]],
                            height_ratios=[1, myShape[0]/myShape[1]])
     #set up my canvas
-    fig = plt.figure(figsize=(5,5)) #necessary to make the overall figure shape
+    fig = plt.figure(figsize=(5*myShape[2]/myShape[1],5)) #necessary to make the overall figure shape
     #square, without this the boxes aren't sized properly
     
     #set up each projection
@@ -100,7 +103,8 @@ def _maxIntProj3D(data, takelog=False):
     ax_XZ.set_title('XZ')
     ax_XZ.axis('tight')
     
-    fig.tight_layout()
+    if(matplotlib.get_backend() != 'MacOSX'):
+        fig.tight_layout()
     fig.show()
     
 #scritping ability
