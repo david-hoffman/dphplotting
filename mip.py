@@ -8,19 +8,18 @@ TO DO
 """
 
 import numpy as np
-#import scipy as sp
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec #fancy subplot layout
 
-def maxIntProj(data, **kwargs):
+def mip(data, **kwargs):
     """
     A wrapper function for the two sub methods:
 
-    * _maxIntProj2D
-    * _maxIntProj3D
+    * _mip2D
+    * _mip3D
 
-    Based on the size of data
+    Chooses the correct one based on the size of data
 
     Parameters
     ----------------
@@ -38,20 +37,20 @@ def maxIntProj(data, **kwargs):
     numdims = data.ndim
 
     if(numdims == 2):
-        return _maxIntProj2D(data, **kwargs)
+        return _mip2D(data, **kwargs)
     elif(numdims == 3):
-        return _maxIntProj3D(data, **kwargs)
+        return _mip3D(data, **kwargs)
     else: #raise a type error if the data is not 2 or 3D
         raise TypeError('Data was not two dimensional or three dimensional')
 
 
-def _maxIntProj2D(data, takelog=False):
+def _mip2D(data, takelog=False):
     """
     A subfunction that makes a nice plot of 2D data with max projections along either side
 
     Parameters
     ----------------
-    data = the data passed from the maxIntProj wrapper function
+    data = the data passed from the mip wrapper function
     takelog = not implemented yet
 
     Returns
@@ -102,15 +101,15 @@ def _maxIntProj2D(data, takelog=False):
     return fig, np.array([ax_XY, ax_Y, ax_X])
 
 
-def _maxIntProj3D(data, takelog=False):
+def _mip3D(data, takelog=False):
     """
     A subfunction that makes a nice plot of 3D data with max projections along either side
 
-    Documentation very similar for `_maxIntProj2D`
+    Documentation very similar for `_mip2D`
 
     Parameters
     ----------------
-    data = the data passed from the maxIntProj wrapper function
+    data = the data passed from the mip wrapper function
     takelog = not implemented yet
 
     Returns
@@ -154,32 +153,3 @@ def _maxIntProj3D(data, takelog=False):
         fig.tight_layout()
 
     return fig, np.array([ax_XY, ax_YZ, ax_XZ])
-
-#Here we add scripting ability so that this module may be called as a standalone script
-#from the command line
-if __name__=='__main__': #check to see if we're being run from the command line
-    import sys #we need access to the system, especially argv
-
-    #if we want to update this to take more arguments we'll need to use one of the
-    #argument parsing packages
-
-    #a little output so that the user knows whats going on
-    print('Running',sys.argv[0],'on',sys.argv[1])
-
-    #Need to take the first system argument as the filename for a TIF file
-
-    #test if filename has tiff in it
-    filename = sys.argv[1] #assume that first argument is file name
-    if '.tif' in filename or '.tiff' in filename:
-        #Import skimage so we have access to tiff loading
-        from skimage.external import tifffile as tif
-        data = tif.imread(filename)
-        #plot the data
-        fig, ax = maxIntProj(data)
-        #readjust the white space (maybe move this into main code later)
-        fig.subplots_adjust(top=0.85,hspace=0.3,wspace=0.3)
-        #add an overall figure title that's the file name
-        fig.suptitle(filename, fontsize=16)
-        plt.show()
-    else:
-        print('You didn\'t give me a TIFF')
