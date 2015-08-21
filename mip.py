@@ -44,27 +44,31 @@ def mip(data, **kwargs):
         raise TypeError('Data was not two dimensional or three dimensional')
 
 
-def _mip2D(data, takelog=False):
+def _mip2D(data, allaxes = False):
     """
     A subfunction that makes a nice plot of 2D data with max projections along either side
 
     Parameters
-    ----------------
-    data = the data passed from the mip wrapper function
-    takelog = not implemented yet
+    ----------
+    data : ndarray
+        the data passed from the mip wrapper function
+    allaxes : bool (default, False)
+        A boolean that determines if all the axes should be returned of if the
+        middle one should be deleted
 
     Returns
-    ----------------
-    fig = figure handle
-    ax = axes handles in a flat ndarray
+    -------
+    fig : ndarray
+        figure handle
+    ax : ndarray
+        axes handles in a flat ndarray
     """
 
     #figure out the shape of the data
     myShape = data.shape
 
     #use that data to correctly scale the grids that we'll plot on
-    gs = gridspec.GridSpec(2,2,width_ratios=[2,1],
-                           height_ratios=[1, 2])
+    gs = gridspec.GridSpec(2,2,width_ratios=[2,1], height_ratios=[1, 2])
 
     #set up my canvas
     fig = plt.figure(figsize=(5*myShape[1]/myShape[0],5)) #necessary to make the overall
@@ -98,25 +102,30 @@ def _mip2D(data, takelog=False):
     if(matplotlib.get_backend() != 'MacOSX'):
         fig.tight_layout()
 
-    return fig, np.array([ax_XY, ax_Y, ax_X])
+    if allaxes:
+        return fig, np.array([ax_XY, ax_Y, ax_X, plt.subplot(gs[1])])
+    else:
+        return fig, np.array([ax_XY, ax_Y, ax_X])
 
 
-def _mip3D(data, takelog=False):
-    """
-    A subfunction that makes a nice plot of 3D data with max projections along either side
-
-    Documentation very similar for `_mip2D`
-
+def _mip3D(data, allaxes = False):
+    '''
     Parameters
-    ----------------
-    data = the data passed from the mip wrapper function
-    takelog = not implemented yet
+    ----------
+    data : ndarray
+        the data passed from the mip wrapper function
+    allaxes : bool (default, False)
+        A boolean that determines if all the axes should be returned of if the
+        middle one should be deleted
 
     Returns
-    ----------------
-    fig = figure handle
-    ax = axes handles in a flat ndarray
-    """
+    -------
+    fig : ndarray
+        figure handle
+    ax : ndarray
+        axes handles in a flat ndarray
+    '''
+    
     #print('Plotting 3D data')
     maxZ = np.amax(data, axis=0)
     maxY = np.amax(data, axis=1)
@@ -152,4 +161,7 @@ def _mip3D(data, takelog=False):
     if(matplotlib.get_backend() != 'MacOSX'):
         fig.tight_layout()
 
-    return fig, np.array([ax_XY, ax_YZ, ax_XZ])
+    if allaxes:
+        return fig, np.array([ax_XY, ax_YZ, ax_XZ, plt.subplot(gs[3])])
+    else:
+        return fig, np.array([ax_XY, ax_YZ, ax_XZ])
