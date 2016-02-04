@@ -44,7 +44,7 @@ def mip(data, **kwargs):
         raise TypeError('Data was not two dimensional or three dimensional')
 
 
-def _mip2D(data, allaxes = False):
+def _mip2D(data, allaxes = False,**kwargs):
     """
     A subfunction that makes a nice plot of 2D data with max projections along either side
 
@@ -108,7 +108,7 @@ def _mip2D(data, allaxes = False):
         return fig, np.array([ax_XY, ax_Y, ax_X])
 
 
-def _mip3D(data, allaxes = False):
+def _mip3D(data, allaxes = False, **kwargs):
     '''
     Parameters
     ----------
@@ -125,7 +125,7 @@ def _mip3D(data, allaxes = False):
     ax : ndarray
         axes handles in a flat ndarray
     '''
-    
+
     #print('Plotting 3D data')
     maxZ = np.amax(data, axis=0)
     maxY = np.amax(data, axis=1)
