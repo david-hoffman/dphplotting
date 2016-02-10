@@ -43,8 +43,7 @@ def mip(data, **kwargs):
     else: #raise a type error if the data is not 2 or 3D
         raise TypeError('Data was not two dimensional or three dimensional')
 
-
-def _mip2D(data, allaxes = False,**kwargs):
+def _mip2D(data, allaxes = False, func = np.amax, **kwargs):
     """
     A subfunction that makes a nice plot of 2D data with max projections along either side
 
@@ -76,8 +75,8 @@ def _mip2D(data, allaxes = False,**kwargs):
                             #properly
 
     # Max X and Y
-    maxY = np.amax(data,axis=0)
-    maxX = np.amax(data,axis=1)
+    maxY = func(data,axis=0)
+    maxX = func(data,axis=1)
 
     #set up each projection
     #Z
@@ -108,7 +107,7 @@ def _mip2D(data, allaxes = False,**kwargs):
         return fig, np.array([ax_XY, ax_Y, ax_X])
 
 
-def _mip3D(data, allaxes = False, **kwargs):
+def _mip3D(data, allaxes = False, func = np.amax, **kwargs):
     '''
     Parameters
     ----------
@@ -127,9 +126,9 @@ def _mip3D(data, allaxes = False, **kwargs):
     '''
 
     #print('Plotting 3D data')
-    maxZ = np.amax(data, axis=0)
-    maxY = np.amax(data, axis=1)
-    maxX = np.amax(data, axis=2)
+    maxZ = func(data, axis=0)
+    maxY = func(data, axis=1)
+    maxX = func(data, axis=2)
 
     #grab the data shape
     myShape = data.shape
@@ -144,17 +143,17 @@ def _mip3D(data, allaxes = False, **kwargs):
 
     #set up each projection
     ax_XY = plt.subplot(gs[0])
-    ax_XY.matshow(maxZ)
+    ax_XY.matshow(maxZ, **kwargs)
     ax_XY.set_title('XY')
     ax_XY.axis('tight')
 
     ax_YZ = plt.subplot(gs[1], sharey=ax_XY)
-    ax_YZ.matshow(maxX.T)
+    ax_YZ.matshow(maxX.T, **kwargs)
     ax_YZ.set_title('YZ')
     ax_YZ.axis('tight')
 
     ax_XZ = plt.subplot(gs[2], sharex=ax_XY)
-    ax_XZ.matshow(maxY)
+    ax_XZ.matshow(maxY, **kwargs)
     ax_XZ.set_title('XZ')
     ax_XZ.axis('tight')
 
