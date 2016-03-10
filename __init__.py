@@ -8,11 +8,13 @@ Created on Tue Jun 16 18:31:00 2015
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec #fancy subplot layout
+# fancy subplot layout
+import matplotlib.gridspec as gridspec
 from scipy.ndimage import gaussian_filter
 
-def display_grid(data, showcontour = False, contourcolor = 'w', filter_size = None,
-                                                        figsize = 3, **kwargs):
+
+def display_grid(data, showcontour=False, contourcolor='w', filter_size=None,
+                 figsize=3, **kwargs):
     '''
     Display a dictionary of images in a nice grid
 
@@ -23,26 +25,27 @@ def display_grid(data, showcontour = False, contourcolor = 'w', filter_size = No
     showcontour: bool (default, False)
         Whether to show contours or not
     '''
-    if not isinstance(data,dict):
+    if not isinstance(data, dict):
         raise TypeError('Data is not a dictionary!')
 
     numitems = len(data)
     nrows = int(np.sqrt(numitems))
     ncols = int(np.ceil(numitems/nrows))
 
-    fig, axs =  plt.subplots(nrows,ncols,figsize = (figsize*ncols,figsize*nrows))
+    fig, axs = plt.subplots(nrows, ncols,
+                            figsize=(figsize*ncols, figsize*nrows))
     for (k, v), ax in zip(sorted(data.items()), axs.ravel()):
         if v.ndim == 1:
-            ax.plot(v,**kwargs)
+            ax.plot(v, **kwargs)
         elif v.ndim == 2:
-            ax.matshow(v,**kwargs)
+            ax.matshow(v, **kwargs)
             if showcontour:
                 if filter_size is None:
                     vv = v
                 else:
                     vv = gaussian_filter(v, filter_size)
 
-                ax.contour(vv,colors=contourcolor)
+                ax.contour(vv, colors=contourcolor)
         ax.set_title(k)
         ax.axis('off')
 
@@ -52,7 +55,8 @@ def display_grid(data, showcontour = False, contourcolor = 'w', filter_size = No
 
     return fig, axs
 
-def slice_plot(data,center = None, allaxes = False, **kwargs):
+
+def slice_plot(data, center=None, allaxes=False, **kwargs):
     '''
     Parameters
     ----------
@@ -76,21 +80,22 @@ def slice_plot(data,center = None, allaxes = False, **kwargs):
         center = np.array(center, dtype=int)
 
     maxZ = data[center[0]]
-    maxY = data[:,center[1]]
-    maxX = data[:,:,center[2]]
+    maxY = data[:, center[1]]
+    maxX = data[:, :, center[2]]
 
-    #grab the data shape
+    # grab the data shape
     myShape = data.shape
 
-    #set up the grid for the subplots
-    gs = gridspec.GridSpec(2,2,width_ratios=[1, myShape[0]/myShape[2]],
+    # set up the grid for the subplots
+    gs = gridspec.GridSpec(2, 2, width_ratios=[1, myShape[0]/myShape[2]],
                            height_ratios=[1, myShape[0]/myShape[1]])
-    #set up my canvas
-    fig = plt.figure(figsize=(5*myShape[2]/myShape[1],5)) #necessary to make the overall
-                                                        #figure shape square, without this
-                                                        #the boxes aren't sized properly
+    # set up my canvas
+    # necessary to make the overall
+    # figure shape square, without this
+    # the boxes aren't sized properly
+    fig = plt.figure(figsize=(5*myShape[2]/myShape[1], 5))
 
-    #set up each projection
+    # set up each projection
     ax_XY = plt.subplot(gs[0])
     ax_XY.matshow(maxZ)
     ax_XY.set_title('XY')
@@ -113,3 +118,15 @@ def slice_plot(data,center = None, allaxes = False, **kwargs):
         return fig, np.array([ax_XY, ax_YZ, ax_XZ, plt.subplot(gs[3])])
     else:
         return fig, np.array([ax_XY, ax_YZ, ax_XZ])
+
+
+def recolor(ax, cmap):
+    '''
+    Recolor the lines in ax with the cmap
+    '''
+    # figure out how many lines are in ax
+    lines = [item for item in ax.get_children()
+             if isinstance(item, matplotlib.lines.Line2D)]
+    # recolor
+    for line, color in zip(lines, cmap(np.linspace(0, 1, len(lines)))):
+        line.set_color(color)
