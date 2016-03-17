@@ -11,10 +11,11 @@ import matplotlib.pyplot as plt
 # fancy subplot layout
 import matplotlib.gridspec as gridspec
 from scipy.ndimage import gaussian_filter
+from dphutils import auto_adjust
 
 
 def display_grid(data, showcontour=False, contourcolor='w', filter_size=None,
-                 figsize=3, **kwargs):
+                 figsize=3, auto=False, **kwargs):
     '''
     Display a dictionary of images in a nice grid
 
@@ -38,7 +39,15 @@ def display_grid(data, showcontour=False, contourcolor='w', filter_size=None,
         if v.ndim == 1:
             ax.plot(v, **kwargs)
         elif v.ndim == 2:
-            ax.matshow(v, **kwargs)
+            if auto:
+                # pop vmin and vmax from **kwargs
+                kwargs.pop('vmin', None)
+                kwargs.pop('vmax', None)
+                # calculate vmin, vmax
+                vmin, vmax = auto_adjust(v)
+                ax.matshow(v, vmin=vmin, vmax=vmax, **kwargs)
+            else:
+                ax.matshow(v, **kwargs)
             if showcontour:
                 if filter_size is None:
                     vv = v
