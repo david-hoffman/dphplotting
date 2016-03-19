@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 # fancy subplot layout
 import matplotlib.gridspec as gridspec
 from scipy.ndimage import gaussian_filter
-from dphutils import auto_adjust
 
 
 def display_grid(data, showcontour=False, contourcolor='w', filter_size=None,
@@ -38,16 +37,16 @@ def display_grid(data, showcontour=False, contourcolor='w', filter_size=None,
     for (k, v), ax in zip(sorted(data.items()), axs.ravel()):
         if v.ndim == 1:
             ax.plot(v, **kwargs)
-        elif v.ndim == 2:
+        else:
             if auto:
                 # pop vmin and vmax from **kwargs
                 kwargs.pop('vmin', None)
                 kwargs.pop('vmax', None)
                 # calculate vmin, vmax
                 vmin, vmax = auto_adjust(v)
-                ax.matshow(v, vmin=vmin, vmax=vmax, **kwargs)
+                ax.imshow(v, vmin=vmin, vmax=vmax, **kwargs)
             else:
-                ax.matshow(v, **kwargs)
+                ax.imshow(v, **kwargs)
             if showcontour:
                 if filter_size is None:
                     vv = v
@@ -139,3 +138,51 @@ def recolor(ax, cmap):
     # recolor
     for line, color in zip(lines, cmap(np.linspace(0, 1, len(lines)))):
         line.set_color(color)
+
+
+
+def auto_adjust(img, nbins=256):
+    '''
+    Python translation of ImageJ autoadjust function
+
+    Parameters
+    ----------
+    img : ndarray
+
+    Returns
+    -------
+    (vmin, vmax) : tuple of numbers
+    '''
+    # calc statistics
+    pixel_count = int(np.array((img.shape)).prod())
+    # get image statistics
+    # ImageStatistics stats = imp.getStatistics()
+    # initialize limit
+    limit = pixel_count/10
+    # histogram
+    my_hist, bins = np.histogram(img.ravel(), bins=nbins)
+    # set up the threshold
+    # Below is what ImageJ purportedly does.
+    # auto_threshold = threshold_isodata(img, nbins=bins)
+    # if auto_threshold < 10:
+    #     auto_threshold = 5000
+    # else:
+    #     auto_threshold /= 2
+    # this version, below, seems to converge as nbins increases.
+    threshold = pixel_count/(nbins*16)
+    # find the minimum by iterating through the histogram
+    # which has 256 bins
+    valid_bins = bins[np.logical_and(my_hist < limit, my_hist > threshold)]
+    # check if the found limits are valid.
+    try:
+        vmin = valid_bins[0]
+        vmax = valid_bins[-1]
+    except IndexError:
+        vmin = 0
+        vmax = 0
+
+    if vmax <= vmin:
+        vmin = img.min()
+        vmax = img.max()
+
+    return (vmin, vmax)
