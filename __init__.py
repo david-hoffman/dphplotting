@@ -128,16 +128,29 @@ def slice_plot(data, center=None, allaxes=False, **kwargs):
         return fig, np.array([ax_XY, ax_YZ, ax_XZ])
 
 
-def recolor(ax, cmap):
+def recolor(ax, cmap, new_alpha=None):
     '''
     Recolor the lines in ax with the cmap
     '''
     # figure out how many lines are in ax
-    lines = [item for item in ax.get_children()
-             if isinstance(item, matplotlib.lines.Line2D)]
-    # recolor
-    for line, color in zip(lines, cmap(np.linspace(0, 1, len(lines)))):
-        line.set_color(color)
+    num_lines = len(ax.lines)
+    # set the new alpha mapping, if wanted
+    if 'best' in new_alpha:
+        r = 1/num_lines
+        try:
+            expon = new_alpha['best']
+        except TypeError:
+            expon = 2
+        new_alpha = 1 - ((1 - np.sqrt(r))/(1 + np.sqrt(r)))**expon
+    # cycle through colors and recolor lines
+    for i, line in enumerate(ax.lines):
+        # generate new color
+        new_color = list(cmap(i/num_lines))
+        # replace alpha is wanted
+        if new_alpha is not None:
+            new_color[-1] = new_alpha
+        # set the color
+        line.set_c(new_color)
 
 
 
