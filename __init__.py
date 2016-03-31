@@ -14,7 +14,7 @@ from scipy.ndimage import gaussian_filter
 
 
 def display_grid(data, showcontour=False, contourcolor='w', filter_size=None,
-                 figsize=3, auto=False, **kwargs):
+                 figsize=3, auto=False, nrows=None, **kwargs):
     '''
     Display a dictionary of images in a nice grid
 
@@ -29,7 +29,8 @@ def display_grid(data, showcontour=False, contourcolor='w', filter_size=None,
         raise TypeError('Data is not a dictionary!')
 
     numitems = len(data)
-    nrows = int(np.sqrt(numitems))
+    if nrows is None:
+        nrows = int(np.sqrt(numitems))
     ncols = int(np.ceil(numitems/nrows))
 
     fig, axs = plt.subplots(nrows, ncols,
@@ -151,7 +152,6 @@ def recolor(ax, cmap, new_alpha=None):
             new_color[-1] = new_alpha
         # set the color
         line.set_c(new_color)
-
 
 
 def auto_adjust(img, nbins=256):
