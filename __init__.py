@@ -129,20 +129,21 @@ def slice_plot(data, center=None, allaxes=False, **kwargs):
         return fig, np.array([ax_XY, ax_YZ, ax_XZ])
 
 
-def recolor(ax, cmap, new_alpha='None'):
+def recolor(ax, cmap, new_alpha=None):
     '''
     Recolor the lines in ax with the cmap
     '''
     # figure out how many lines are in ax
     num_lines = len(ax.lines)
     # set the new alpha mapping, if wanted
-    if 'best' in new_alpha:
-        r = 1/num_lines
-        try:
-            expon = new_alpha['best']
-        except TypeError:
-            expon = 2
-        new_alpha = 1 - ((1 - np.sqrt(r))/(1 + np.sqrt(r)))**expon
+    if new_alpha is not None:
+        if 'best' in new_alpha:
+            r = 1/num_lines
+            try:
+                expon = new_alpha['best']
+            except TypeError:
+                expon = 2
+            new_alpha = 1 - ((1 - np.sqrt(r))/(1 + np.sqrt(r)))**expon
     # cycle through colors and recolor lines
     for i, line in enumerate(ax.lines):
         # generate new color
