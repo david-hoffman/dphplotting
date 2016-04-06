@@ -129,7 +129,7 @@ def slice_plot(data, center=None, allaxes=False, **kwargs):
         return fig, np.array([ax_XY, ax_YZ, ax_XZ])
 
 
-def recolor(ax, cmap, new_alpha=None):
+def recolor(ax, cmap, new_alpha='None'):
     '''
     Recolor the lines in ax with the cmap
     '''
