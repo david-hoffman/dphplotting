@@ -175,6 +175,8 @@ def auto_adjust(img, nbins=256):
     limit = pixel_count/10
     # histogram
     my_hist, bins = np.histogram(img.ravel(), bins=nbins)
+    # convert bin edges to bin centers
+    bins = np.diff(bins) + bins[:-1]
     # set up the threshold
     # Below is what ImageJ purportedly does.
     # auto_threshold = threshold_isodata(img, nbins=bins)
