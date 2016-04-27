@@ -129,30 +129,33 @@ def slice_plot(data, center=None, allaxes=False, **kwargs):
         return fig, np.array([ax_XY, ax_YZ, ax_XZ])
 
 
-def recolor(ax, cmap, new_alpha=None):
+def recolor(cmap, ax=None, new_alpha=None, to_change='lines'):
     '''
     Recolor the lines in ax with the cmap
     '''
+    if ax is None:
+        ax=plt.gca()
     # figure out how many lines are in ax
-    num_lines = len(ax.lines)
+    objs = getattr(ax, to_change)
+    num_objs = len(objs)
     # set the new alpha mapping, if wanted
     if new_alpha is not None:
-        if 'best' in new_alpha:
-            r = 1/num_lines
+        if 'best' == new_alpha:
+            r = 1/num_objs
             try:
                 expon = new_alpha['best']
             except TypeError:
                 expon = 2
             new_alpha = 1 - ((1 - np.sqrt(r))/(1 + np.sqrt(r)))**expon
     # cycle through colors and recolor lines
-    for i, line in enumerate(ax.lines):
+    for i, obj in enumerate(objs):
         # generate new color
-        new_color = list(cmap(i/num_lines))
+        new_color = list(cmap(i/num_objs))
         # replace alpha is wanted
         if new_alpha is not None:
             new_color[-1] = new_alpha
         # set the color
-        line.set_c(new_color)
+        obj.set_color(new_color)
 
 
 def auto_adjust(img, nbins=256):
