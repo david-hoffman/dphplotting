@@ -211,8 +211,8 @@ def drift_plot(fit, title=None, dt=1.0, lf=-np.inf, hf=np.inf, log=False,
     xbar = fit.x0 - fit.x0.mean()
     # Plot Real space
     t = np.arange(len(fit)) * dt
-    axreal.plot(t, xbar, 'b', label=r"$x_0$")
-    axreal.plot(t, ybar, 'r', label=r"$y_0$")
+    axreal.plot(t, xbar, xc, label=r"$x_0$")
+    axreal.plot(t, ybar, yc, label=r"$y_0$")
     axreal.set_xlabel('Time (s)')
     # add legend to real axis
     axreal.legend(loc='best')
