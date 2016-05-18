@@ -19,6 +19,7 @@ try:
 except ImportError:
     from numpy.fft import rfftn, rfftfreq
 
+
 def display_grid(data, showcontour=False, contourcolor='w', filter_size=None,
                  figsize=3, auto=False, nrows=None, **kwargs):
     '''
@@ -94,45 +95,45 @@ def slice_plot(data, center=None, allaxes=False, **kwargs):
     else:
         center = np.array(center, dtype=int)
 
-    maxZ = data[center[0]]
-    maxY = data[:, center[1]]
-    maxX = data[:, :, center[2]]
+    max_z = data[center[0]]
+    max_y = data[:, center[1]]
+    max_x = data[:, :, center[2]]
 
     # grab the data shape
-    myShape = data.shape
+    myshape = data.shape
 
     # set up the grid for the subplots
-    gs = gridspec.GridSpec(2, 2, width_ratios=[1, myShape[0] / myShape[2]],
-                           height_ratios=[1, myShape[0] / myShape[1]])
+    gs = gridspec.GridSpec(2, 2, width_ratios=[1, myshape[0] / myshape[2]],
+                           height_ratios=[1, myshape[0] / myshape[1]])
     # set up my canvas
     # necessary to make the overall
     # figure shape square, without this
     # the boxes aren't sized properly
-    fig = plt.figure(figsize=(5 * myShape[2] / myShape[1], 5))
+    fig = plt.figure(figsize=(5 * myshape[2] / myshape[1], 5))
 
     # set up each projection
-    ax_XY = plt.subplot(gs[0])
-    ax_XY.matshow(maxZ)
-    ax_XY.set_title('XY')
-    ax_XY.axis('tight')
+    ax_xy = plt.subplot(gs[0])
+    ax_xy.matshow(max_z)
+    ax_xy.set_title('XY')
+    ax_xy.axis('tight')
 
-    ax_YZ = plt.subplot(gs[1], sharey=ax_XY)
-    ax_YZ.matshow(maxX.T)
-    ax_YZ.set_title('YZ')
-    ax_YZ.axis('tight')
+    ax_yz = plt.subplot(gs[1], sharey=ax_xy)
+    ax_yz.matshow(max_x.T)
+    ax_yz.set_title('YZ')
+    ax_yz.axis('tight')
 
-    ax_XZ = plt.subplot(gs[2], sharex=ax_XY)
-    ax_XZ.matshow(maxY)
-    ax_XZ.set_title('XZ')
-    ax_XZ.axis('tight')
+    ax_xz = plt.subplot(gs[2], sharex=ax_xy)
+    ax_xz.matshow(max_y)
+    ax_xz.set_title('XZ')
+    ax_xz.axis('tight')
 
     if(matplotlib.get_backend() != 'MacOSX'):
         fig.tight_layout()
 
     if allaxes:
-        return fig, np.array([ax_XY, ax_YZ, ax_XZ, plt.subplot(gs[3])])
+        return fig, np.array([ax_xy, ax_yz, ax_xz, plt.subplot(gs[3])])
     else:
-        return fig, np.array([ax_XY, ax_YZ, ax_XZ])
+        return fig, np.array([ax_xy, ax_yz, ax_xz])
 
 
 def recolor(cmap, ax=None, new_alpha=None, to_change='lines'):
@@ -240,6 +241,85 @@ def drift_plot(fit, title=None, dt=1.0, lf=-np.inf, hf=np.inf, log=False,
     fig.tight_layout()
     # return fig, axs to user for further manipulation and/or saving if wanted
     return fig, axs
+
+
+def mip(data, func=np.amax, allaxes=False, plt_kwds=None, **kwargs):
+    """
+    Plot max projection of data
+
+    Parameters
+    ----------------
+    data : 2 or 3 dimensional ndarray 
+        the data to be plotted
+    func :  callable
+        a function to be called on the data, must accept and axes argument
+    allaxes : bool
+        whether to return all axes or not
+    plt_kwds : dict
+        A dictionary of keywords for the plots (2D case)
+    kwargs : dict
+        passed to matshow
+
+    Returns
+    ----------------
+    fig : mpl figure instanse
+        figure handle
+    axs : ndarray of axes objects
+        axes handles in a flat ndarray
+    """
+
+    # set default properly for dict
+    if plt_kwds is None:
+        plt_kwds = {}
+    # pull shape and dimensions
+    myshape = data.shape
+    ndim = data.ndim
+    # set up the grid for the subplots
+    if ndim == 3:
+        gs = gridspec.GridSpec(2, 2, width_ratios=[1, myshape[0] / myshape[2]],
+                               height_ratios=[1, myshape[0] / myshape[1]])
+        # set up my canvas necessary to make the overall figure shape square,
+        # without this the boxes aren't sized properly
+        fig = plt.figure(figsize=(5 * myshape[2] / myshape[1], 5))
+    elif ndim == 2:
+        gs = gridspec.GridSpec(2, 2, width_ratios=[2, 1], height_ratios=[2, 1])
+        fig = plt.figure(figsize=(5, 5))
+    else:
+        raise TypeError("Data has too many dimensions, ndim = {}".format(ndim))
+    # set up each projection
+    ax_xy = plt.subplot(gs[0])
+    ax_xy.set_title('XY')
+    # set up YZ
+    ax_yz = plt.subplot(gs[1], sharey=ax_xy)
+    ax_yz.set_title('YZ')
+    # set up XZ
+    ax_xz = plt.subplot(gs[2], sharex=ax_xy)
+    ax_xz.set_title('XZ')
+    # actually calc data and plot
+    if ndim == 3:
+        max_z = func(data, axis=0)
+        ax_xy.matshow(max_z, **kwargs)
+        max_y = func(data, axis=1)
+        ax_xz.matshow(max_y, **kwargs)
+        max_x = func(data, axis=2)
+        ax_yz.matshow(max_x.T, **kwargs)
+    else:
+        max_z = data.copy()
+        ax_xy.matshow(max_z, **kwargs)
+        max_x = func(data, axis=1)
+        ax_yz.plot(max_x, np.arange(myshape[0]), **plt_kwds)
+        max_y = func(data, axis=0)
+        ax_xz.plot(max_y, **plt_kwds)
+    ax_xy.axis("off")
+    # make all axis tight
+    for ax in (ax_xy, ax_yz, ax_xz):
+        ax.axis("tight")
+    fig.tight_layout()
+    # if the user requests all axes return them
+    if allaxes:
+        return fig, np.array([ax_xy, ax_yz, ax_xz, plt.subplot(gs[3])])
+    else:
+        return fig, np.array([ax_xy, ax_yz, ax_xz])
 
 
 def auto_adjust(img, nbins=256):
