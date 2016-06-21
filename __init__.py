@@ -72,6 +72,24 @@ def display_grid(data, showcontour=False, contourcolor='w', filter_size=None,
     return fig, axs
 
 
+def make_grid(numitems, nrows=None, figsize=3):
+    if nrows is None:
+        nrows = int(np.sqrt(numitems))
+    ncols = int(np.ceil(numitems / nrows))
+
+    fig, axs = plt.subplots(nrows, ncols,
+                            figsize=(figsize * ncols, figsize * nrows))
+
+    return fig, axs
+
+
+def clean_grid(fig, axs):
+    for ax in axs.ravel():
+        if not (len(ax.images) or len(ax.lines)):
+            fig.delaxes(ax)
+    return fig, axs
+
+
 def slice_plot(data, center=None, allaxes=False, **kwargs):
     '''
     Parameters
