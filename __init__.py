@@ -34,14 +34,7 @@ def display_grid(data, showcontour=False, contourcolor='w', filter_size=None,
     '''
     if not isinstance(data, dict):
         raise TypeError('Data is not a dictionary!')
-
-    numitems = len(data)
-    if nrows is None:
-        nrows = int(np.sqrt(numitems))
-    ncols = int(np.ceil(numitems / nrows))
-
-    fig, axs = plt.subplots(nrows, ncols,
-                            figsize=(figsize * ncols, figsize * nrows))
+    fig, axs = make_grid(len(data), nrows=nrows, figsize=figsize)
     for (k, v), ax in zip(sorted(data.items()), axs.ravel()):
         if v.ndim == 1:
             ax.plot(v, **kwargs)
@@ -65,9 +58,7 @@ def display_grid(data, showcontour=False, contourcolor='w', filter_size=None,
         ax.set_title(k)
         ax.axis('off')
 
-    for ax in axs.ravel():
-        if not (len(ax.images) or len(ax.lines)):
-            fig.delaxes(ax)
+    clean_grid(fig, axs)
 
     return fig, axs
 
@@ -183,8 +174,8 @@ def recolor(cmap, ax=None, new_alpha=None, to_change='lines'):
         obj.set_color(new_color)
 
 
-def drift_plot(fit, title=None, dt=1.0, lf=-np.inf, hf=np.inf, log=False,
-               cmap='magma', xc='b', yc='r'):
+def drift_plot(fit, title=None, dt=0.1, dx=130, lf=-np.inf, hf=np.inf,
+               log=False, cmap='magma', xc='b', yc='r'):
     '''
     Plotting utility to show drift curves nicely
 
@@ -196,6 +187,8 @@ def drift_plot(fit, title=None, dt=1.0, lf=-np.inf, hf=np.inf, log=False,
         Title of plot
     dt : float (optional)
         Sampling rate of data in seconds
+    dx : pixel size (optional)
+        Pixel size in nm
     lf : float (optional)
         Low frequency cutoff for fourier plot
     hf : float (optional)
@@ -227,12 +220,15 @@ def drift_plot(fit, title=None, dt=1.0, lf=-np.inf, hf=np.inf, log=False,
         fig.suptitle(title, y=1.02, fontweight='bold')
     # detrend mean
     ybar = fit.y0 - fit.y0.mean()
+    ybar *= dx
     xbar = fit.x0 - fit.x0.mean()
+    xbar *= dx
     # Plot Real space
     t = np.arange(len(fit)) * dt
     axreal.plot(t, xbar, xc, label=r"$x_0$")
     axreal.plot(t, ybar, yc, label=r"$y_0$")
     axreal.set_xlabel('Time (s)')
+    axreal.set_ylabel('Displacement (nm)')
     # add legend to real axis
     axreal.legend(loc='best')
     # calc FFTs
@@ -254,6 +250,10 @@ def drift_plot(fit, title=None, dt=1.0, lf=-np.inf, hf=np.inf, log=False,
     axscatter.scatter(xbar, ybar, c=t, cmap=cmap)
     axscatter.set_xlabel('x')
     axscatter.set_ylabel('y')
+    # make sure the scatter plot is square
+    lims = axreal.get_ylim()
+    axscatter.set_ylim(lims)
+    axscatter.set_xlim(lims)
     # tight layout
     axs = (axreal, axfft, axscatter)
     fig.tight_layout()
