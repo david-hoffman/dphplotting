@@ -6,6 +6,7 @@ Created on Tue Jun 16 18:31:00 2015
 """
 
 import numpy as np
+from functools import partial
 import matplotlib
 import matplotlib.pyplot as plt
 # fancy subplot layout
@@ -81,68 +82,20 @@ def clean_grid(fig, axs):
     return fig, axs
 
 
+def take_slice(data, axis, midpoint=None):
+    """Small utility to be able to take slices"""
+    if midpoint is None:
+        midpoint = np.array(data.shape, dtype=np.int)//2
+    my_slice = [slice(None, None, None) for i in range(data.ndim)]
+    my_slice[axis] = midpoint[axis]
+    return data[my_slice]
+
+
 def slice_plot(data, center=None, allaxes=False, **kwargs):
-    '''
-    Parameters
-    ----------
-    data : ndarray
-        the data passed from the mip wrapper function
-    allaxes : bool (default, False)
-        A boolean that determines if all the axes should be returned of if the
-        middle one should be deleted
-
-    Returns
-    -------
-    fig : ndarray
-        figure handle
-    ax : ndarray
-        axes handles in a flat ndarray
-    '''
-
-    if center is None:
-        center = (np.array(data.shape) / 2).round().astype(int)
-    else:
-        center = np.array(center, dtype=int)
-
-    max_z = data[center[0]]
-    max_y = data[:, center[1]]
-    max_x = data[:, :, center[2]]
-
-    # grab the data shape
-    myshape = data.shape
-
-    # set up the grid for the subplots
-    gs = gridspec.GridSpec(2, 2, width_ratios=[1, myshape[0] / myshape[2]],
-                           height_ratios=[1, myshape[0] / myshape[1]])
-    # set up my canvas
-    # necessary to make the overall
-    # figure shape square, without this
-    # the boxes aren't sized properly
-    fig = plt.figure(figsize=(5 * myshape[2] / myshape[1], 5))
-
-    # set up each projection
-    ax_xy = plt.subplot(gs[0])
-    ax_xy.matshow(max_z)
-    ax_xy.set_title('XY')
-    ax_xy.axis('tight')
-
-    ax_yz = plt.subplot(gs[1], sharey=ax_xy)
-    ax_yz.matshow(max_x.T)
-    ax_yz.set_title('YZ')
-    ax_yz.axis('tight')
-
-    ax_xz = plt.subplot(gs[2], sharex=ax_xy)
-    ax_xz.matshow(max_y)
-    ax_xz.set_title('XZ')
-    ax_xz.axis('tight')
-
-    if(matplotlib.get_backend() != 'MacOSX'):
-        fig.tight_layout()
-
-    if allaxes:
-        return fig, np.array([ax_xy, ax_yz, ax_xz, plt.subplot(gs[3])])
-    else:
-        return fig, np.array([ax_xy, ax_yz, ax_xz])
+    """A slice plot, displays slices through data at `center`"""
+    take_slice2 = partial(take_slice, midpoint=center)
+    return mip(data, func=take_slice2, allaxes=allaxes, **kwargs)
+    
 
 
 def recolor(cmap, ax=None, new_alpha=None, to_change='lines'):
