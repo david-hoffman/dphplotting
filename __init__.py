@@ -7,7 +7,6 @@ Created on Tue Jun 16 18:31:00 2015
 
 import numpy as np
 from functools import partial
-import matplotlib
 import matplotlib.pyplot as plt
 # fancy subplot layout
 import matplotlib.gridspec as gridspec
@@ -46,9 +45,9 @@ def display_grid(data, showcontour=False, contourcolor='w', filter_size=None,
                 kwargs.pop('vmax', None)
                 # calculate vmin, vmax
                 vmin, vmax = auto_adjust(v)
-                ax.imshow(v, vmin=vmin, vmax=vmax, **kwargs)
+                ax.matshow(v, vmin=vmin, vmax=vmax, **kwargs)
             else:
-                ax.imshow(v, **kwargs)
+                ax.matshow(v, **kwargs)
             if showcontour:
                 if filter_size is None:
                     vv = v
@@ -85,7 +84,7 @@ def clean_grid(fig, axs):
 def take_slice(data, axis, midpoint=None):
     """Small utility to be able to take slices"""
     if midpoint is None:
-        midpoint = np.array(data.shape, dtype=np.int)//2
+        midpoint = np.array(data.shape, dtype=np.int) // 2
     my_slice = [slice(None, None, None) for i in range(data.ndim)]
     my_slice[axis] = midpoint[axis]
     return data[my_slice]
@@ -95,7 +94,6 @@ def slice_plot(data, center=None, allaxes=False, **kwargs):
     """A slice plot, displays slices through data at `center`"""
     take_slice2 = partial(take_slice, midpoint=center)
     return mip(data, func=take_slice2, allaxes=allaxes, **kwargs)
-    
 
 
 def recolor(cmap, ax=None, new_alpha=None, to_change='lines'):
@@ -220,7 +218,7 @@ def mip(data, func=np.amax, allaxes=False, plt_kwds=None, **kwargs):
 
     Parameters
     ----------------
-    data : 2 or 3 dimensional ndarray 
+    data : 2 or 3 dimensional ndarray
         the data to be plotted
     func :  callable
         a function to be called on the data, must accept and axes argument
@@ -281,7 +279,8 @@ def mip(data, func=np.amax, allaxes=False, plt_kwds=None, **kwargs):
         ax_yz.plot(max_x, np.arange(myshape[0]), **plt_kwds)
         max_y = func(data, axis=0)
         ax_xz.plot(max_y, **plt_kwds)
-    ax_xy.axis("off")
+    for ax in (ax_xy, ax_xz, ax_yz):
+        ax.axis("off")
     # make all axis tight
     for ax in (ax_xy, ax_yz, ax_xz):
         ax.axis("tight")
@@ -310,7 +309,7 @@ def auto_adjust(img, nbins=256):
     # get image statistics
     # ImageStatistics stats = imp.getStatistics()
     # initialize limit
-    limit = pixel_count/10
+    limit = pixel_count / 10
     # histogram
     my_hist, bins = np.histogram(img.ravel(), bins=nbins)
     # convert bin edges to bin centers
@@ -323,7 +322,7 @@ def auto_adjust(img, nbins=256):
     # else:
     #     auto_threshold /= 2
     # this version, below, seems to converge as nbins increases.
-    threshold = pixel_count/(nbins*16)
+    threshold = pixel_count / (nbins * 16)
     # find the minimum by iterating through the histogram
     # which has 256 bins
     valid_bins = bins[np.logical_and(my_hist < limit, my_hist > threshold)]
