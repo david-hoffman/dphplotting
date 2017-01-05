@@ -21,7 +21,7 @@ except ImportError:
 
 
 def display_grid(data, showcontour=False, contourcolor='w', filter_size=None,
-                 figsize=3, auto=False, nrows=None, **kwargs):
+                 figsize=3, auto=False, nrows=None, aspect=None, **kwargs):
     '''
     Display a dictionary of images in a nice grid
 
@@ -34,7 +34,21 @@ def display_grid(data, showcontour=False, contourcolor='w', filter_size=None,
     '''
     if not isinstance(data, dict):
         raise TypeError('Data is not a dictionary!')
-    fig, axs = make_grid(len(data), nrows=nrows, figsize=figsize)
+    # figure out aspect ratios of data (a = y / x)
+    if aspect is None:
+        aspects = np.array([
+            v.shape[0] / v.shape[1] for v in data.values() if v.ndim > 1
+        ])
+        # if len is zero then everything was 1d
+        if len(aspects):
+            aspect = aspects.mean()
+            if not np.isfinite(aspect):
+                raise RuntimeError(
+                    "aspect isn't finite, aspect = {}".format(aspect))
+        else:
+            aspect = 1
+    fig, axs = make_grid(len(data), nrows=nrows, figsize=figsize,
+                         aspect=aspect)
     for (k, v), ax in zip(sorted(data.items()), axs.ravel()):
         if v.ndim == 1:
             ax.plot(v, **kwargs)
@@ -63,13 +77,14 @@ def display_grid(data, showcontour=False, contourcolor='w', filter_size=None,
     return fig, axs
 
 
-def make_grid(numitems, nrows=None, figsize=3):
+def make_grid(numitems, nrows=None, figsize=3, aspect=1):
     if nrows is None:
         nrows = int(np.sqrt(numitems))
     ncols = int(np.ceil(numitems / nrows))
 
-    fig, axs = plt.subplots(nrows, ncols,
-                            figsize=(figsize * ncols, figsize * nrows))
+    fig, axs = plt.subplots(
+        nrows, ncols, figsize=(figsize * ncols, figsize * nrows * aspect)
+    )
 
     return fig, axs
 
