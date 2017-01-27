@@ -260,8 +260,8 @@ def mip(data, func=np.amax, allaxes=False, plt_kwds=None, **kwargs):
     ndim = data.ndim
     # set up the grid for the subplots
     if ndim == 3:
-        gs = gridspec.GridSpec(2, 2, width_ratios=[1, myshape[0] / myshape[2]],
-                               height_ratios=[1, myshape[0] / myshape[1]])
+        gs = gridspec.GridSpec(2, 2, width_ratios=[1, myshape[0] * zaspect / myshape[2]],
+                               height_ratios=[1, myshape[0] * zaspect / myshape[1]])
         # set up my canvas necessary to make the overall figure shape square,
         # without this the boxes aren't sized properly
         fig = plt.figure(figsize=(5 * myshape[2] / myshape[1], 5))
@@ -284,9 +284,9 @@ def mip(data, func=np.amax, allaxes=False, plt_kwds=None, **kwargs):
         max_z = func(data, axis=0)
         ax_xy.matshow(max_z, **kwargs)
         max_y = func(data, axis=1)
-        ax_xz.matshow(max_y, **kwargs)
+        ax_xz.matshow(max_y, aspect=zaspect, **kwargs)
         max_x = func(data, axis=2)
-        ax_yz.matshow(max_x.T, **kwargs)
+        ax_yz.matshow(max_x.T, aspect=zaspect, **kwargs)
     else:
         max_z = data.copy()
         ax_xy.matshow(max_z, **kwargs)
@@ -354,3 +354,45 @@ def auto_adjust(img, nbins=256):
         vmax = img.max()
 
     return (vmin, vmax)
+
+
+def wavelength_to_rgb(wavelength, gamma=0.8):
+    """This converts a given wavelength of light to an 
+    approximate RGB color value. The wavelength must be given
+    in nanometers in the range from 380 nm through 750 nm
+    (789 THz through 400 THz).
+    Based on code by Dan Bruton
+    http://www.physics.sfasu.edu/astro/color/spectra.html
+    """
+    wavelength = float(wavelength)
+    if wavelength >= 380 and wavelength <= 440:
+        attenuation = 0.3 + 0.7 * (wavelength - 380) / (440 - 380)
+        R = ((-(wavelength - 440) / (440 - 380)) * attenuation) ** gamma
+        G = 0.0
+        B = (1.0 * attenuation) ** gamma
+    elif wavelength >= 440 and wavelength <= 490:
+        R = 0.0
+        G = ((wavelength - 440) / (490 - 440)) ** gamma
+        B = 1.0
+    elif wavelength >= 490 and wavelength <= 510:
+        R = 0.0
+        G = 1.0
+        B = (-(wavelength - 510) / (510 - 490)) ** gamma
+    elif wavelength >= 510 and wavelength <= 580:
+        R = ((wavelength - 510) / (580 - 510)) ** gamma
+        G = 1.0
+        B = 0.0
+    elif wavelength >= 580 and wavelength <= 645:
+        R = 1.0
+        G = (-(wavelength - 645) / (645 - 580)) ** gamma
+        B = 0.0
+    elif wavelength >= 645 and wavelength <= 750:
+        attenuation = 0.3 + 0.7 * (750 - wavelength) / (750 - 645)
+        R = (1.0 * attenuation) ** gamma
+        G = 0.0
+        B = 0.0
+    else:
+        R = 0.0
+        G = 0.0
+        B = 0.0
+    return (R, G, B)
