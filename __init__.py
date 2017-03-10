@@ -6,6 +6,7 @@ Created on Tue Jun 16 18:31:00 2015
 """
 
 import numpy as np
+import warnings
 from functools import partial
 import matplotlib.pyplot as plt
 # fancy subplot layout
@@ -54,14 +55,9 @@ def display_grid(data, showcontour=False, contourcolor='w', filter_size=None,
             ax.plot(v, **kwargs)
         else:
             if auto:
-                # pop vmin and vmax from **kwargs
-                kwargs.pop('vmin', None)
-                kwargs.pop('vmax', None)
                 # calculate vmin, vmax
-                vmin, vmax = auto_adjust(v)
-                ax.matshow(v, vmin=vmin, vmax=vmax, **kwargs)
-            else:
-                ax.matshow(v, **kwargs)
+                kwargs["vmin"], kwargs["vmax"] = auto_adjust(v)
+            ax.matshow(v, **kwargs)
             if showcontour:
                 if filter_size is None:
                     vv = v
@@ -227,7 +223,7 @@ def drift_plot(fit, title=None, dt=0.1, dx=130, lf=-np.inf, hf=np.inf,
     return fig, axs
 
 
-def mip(data, func=np.amax, allaxes=False, plt_kwds=None, **kwargs):
+def mip(data, zaspect=1, func=np.amax, allaxes=False, plt_kwds=None, **kwargs):
     """
     Plot max projection of data
 
@@ -326,7 +322,10 @@ def auto_adjust(img, nbins=256):
     # initialize limit
     limit = pixel_count / 10
     # histogram
-    my_hist, bins = np.histogram(img.ravel(), bins=nbins)
+    my_hist, bins = np.histogram(np.nan_to_num(img).ravel(), bins="auto")
+    if len(bins) < 100:
+        warnings.warn(("Number of bins is"
+                       " {} which may be inaccurate").format(len(bins)))
     # convert bin edges to bin centers
     bins = np.diff(bins) + bins[:-1]
     # set up the threshold
