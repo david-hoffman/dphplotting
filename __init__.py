@@ -115,6 +115,11 @@ def recolor(cmap, ax=None, new_alpha=None, to_change='lines'):
     '''
     Recolor the lines in ax with the cmap
     '''
+    if isinstance(cmap, str):
+        # user has passed a string
+        # presumably the name of a registered color map
+        cmap = plt.get_cmap(cmap)
+
     if ax is None:
         ax = plt.gca()
     # figure out how many lines are in ax
