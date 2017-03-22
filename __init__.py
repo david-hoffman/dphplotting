@@ -326,23 +326,23 @@ def auto_adjust(img, nbins=256):
     # initialize limit
     limit = pixel_count / 10
     # histogram
-    my_hist, bins = np.histogram(img.ravel(), bins=nbins)
-    # convert bin edges to bin centers
-    bins = np.diff(bins) + bins[:-1]
-    # set up the threshold
-    # Below is what ImageJ purportedly does.
-    # auto_threshold = threshold_isodata(img, nbins=bins)
-    # if auto_threshold < 10:
-    #     auto_threshold = 5000
-    # else:
-    #     auto_threshold /= 2
-    # this version, below, seems to converge as nbins increases.
-    threshold = pixel_count / (nbins * 16)
-    # find the minimum by iterating through the histogram
-    # which has 256 bins
-    valid_bins = bins[np.logical_and(my_hist < limit, my_hist > threshold)]
-    # check if the found limits are valid.
     try:
+        my_hist, bins = np.histogram(img[np.isfinite(img)], bins=nbins)
+        # convert bin edges to bin centers
+        bins = np.diff(bins) + bins[:-1]
+        # set up the threshold
+        # Below is what ImageJ purportedly does.
+        # auto_threshold = threshold_isodata(img, nbins=bins)
+        # if auto_threshold < 10:
+        #     auto_threshold = 5000
+        # else:
+        #     auto_threshold /= 2
+        # this version, below, seems to converge as nbins increases.
+        threshold = pixel_count / (nbins * 16)
+        # find the minimum by iterating through the histogram
+        # which has 256 bins
+        valid_bins = bins[np.logical_and(my_hist < limit, my_hist > threshold)]
+        # check if the found limits are valid.
         vmin = valid_bins[0]
         vmax = valid_bins[-1]
     except IndexError:
