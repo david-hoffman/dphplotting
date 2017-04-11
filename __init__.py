@@ -74,12 +74,18 @@ def display_grid(data, showcontour=False, contourcolor='w', filter_size=None,
 
 
 def make_grid(numitems, nrows=None, figsize=3, aspect=1):
+    if numitems == 0:
+        raise ValueError("numitems can't be zero.")
     if nrows is None:
         nrows = int(np.sqrt(numitems))
-    ncols = int(np.ceil(numitems / nrows))
+    if nrows == 0:
+        nrows = ncols = 1
+    else:
+        ncols = int(np.ceil(numitems / nrows))
 
     fig, axs = plt.subplots(
-        nrows, ncols, figsize=(figsize * ncols, figsize * nrows * aspect)
+        nrows, ncols, figsize=(figsize * ncols, figsize * nrows * aspect),
+        squeeze=False
     )
 
     return fig, axs
