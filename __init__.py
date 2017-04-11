@@ -22,7 +22,7 @@ except ImportError:
 
 
 def display_grid(data, showcontour=False, contourcolor='w', filter_size=None,
-                 figsize=3, auto=False, nrows=None, aspect=None, **kwargs):
+                 figsize=3, auto=False, nrows=None, grid_aspect=None, **kwargs):
     '''
     Display a dictionary of images in a nice grid
 
@@ -35,21 +35,21 @@ def display_grid(data, showcontour=False, contourcolor='w', filter_size=None,
     '''
     if not isinstance(data, dict):
         raise TypeError('Data is not a dictionary!')
-    # figure out aspect ratios of data (a = y / x)
-    if aspect is None:
+    # figure out grid_aspect ratios of data (a = y / x)
+    if grid_aspect is None:
         aspects = np.array([
             v.shape[0] / v.shape[1] for v in data.values() if v.ndim > 1
         ])
         # if len is zero then everything was 1d
         if len(aspects):
-            aspect = aspects.mean()
-            if not np.isfinite(aspect):
+            grid_aspect = aspects.mean()
+            if not np.isfinite(grid_aspect):
                 raise RuntimeError(
-                    "aspect isn't finite, aspect = {}".format(aspect))
+                    "grid_aspect isn't finite, grid_aspect = {}".format(grid_aspect))
         else:
-            aspect = 1
+            grid_aspect = 1
     fig, axs = make_grid(len(data), nrows=nrows, figsize=figsize,
-                         aspect=aspect)
+                         grid_aspect=grid_aspect)
     for (k, v), ax in zip(sorted(data.items()), axs.ravel()):
         if v.ndim == 1:
             ax.plot(v, **kwargs)
@@ -73,7 +73,7 @@ def display_grid(data, showcontour=False, contourcolor='w', filter_size=None,
     return fig, axs
 
 
-def make_grid(numitems, nrows=None, figsize=3, aspect=1):
+def make_grid(numitems, nrows=None, figsize=3, grid_aspect=1):
     if numitems == 0:
         raise ValueError("numitems can't be zero.")
     if nrows is None:
@@ -84,7 +84,7 @@ def make_grid(numitems, nrows=None, figsize=3, aspect=1):
         ncols = int(np.ceil(numitems / nrows))
 
     fig, axs = plt.subplots(
-        nrows, ncols, figsize=(figsize * ncols, figsize * nrows * aspect),
+        nrows, ncols, figsize=(figsize * ncols, figsize * nrows * grid_aspect),
         squeeze=False
     )
 
