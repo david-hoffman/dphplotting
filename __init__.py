@@ -314,7 +314,7 @@ def mip(data, zaspect=1, func=np.amax, allaxes=False, plt_kwds=None, **kwargs):
         return fig, np.array([ax_xy, ax_yz, ax_xz])
 
 
-def auto_adjust(img, nbins=256):
+def auto_adjust(img):
     '''
     Python translation of ImageJ autoadjust function
 
@@ -336,10 +336,10 @@ def auto_adjust(img, nbins=256):
     try:
         my_hist, bins = np.histogram(np.nan_to_num(img).ravel(), bins="auto")
         if len(bins) < 100:
-            warnings.warn(("Number of bins is"
-                           " {} which may be inaccurate").format(len(bins)))
+            my_hist, bins = np.histogram(np.nan_to_num(img).ravel(), bins=128)
         # convert bin edges to bin centers
         bins = np.diff(bins) + bins[:-1]
+        nbins = len(my_hist)
         # set up the threshold
         # Below is what ImageJ purportedly does.
         # auto_threshold = threshold_isodata(img, nbins=bins)
