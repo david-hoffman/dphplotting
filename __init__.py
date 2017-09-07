@@ -73,7 +73,7 @@ def display_grid(data, showcontour=False, contourcolor='w', filter_size=None,
     return fig, axs
 
 
-def make_grid(numitems, nrows=None, figsize=3, grid_aspect=1):
+def make_grid(numitems, nrows=None, figsize=3, grid_aspect=1, **kwargs):
     if numitems == 0:
         raise ValueError("numitems can't be zero.")
     if nrows is None:
@@ -85,7 +85,7 @@ def make_grid(numitems, nrows=None, figsize=3, grid_aspect=1):
 
     fig, axs = plt.subplots(
         nrows, ncols, figsize=(figsize * ncols, figsize * nrows * grid_aspect),
-        squeeze=False
+        squeeze=False, **kwargs
     )
 
     return fig, axs
@@ -93,7 +93,7 @@ def make_grid(numitems, nrows=None, figsize=3, grid_aspect=1):
 
 def clean_grid(fig, axs):
     for ax in axs.ravel():
-        if not (len(ax.images) or len(ax.lines)):
+        if not (len(ax.images) or len(ax.lines) or len(ax.patches)):
             fig.delaxes(ax)
     return fig, axs
 
