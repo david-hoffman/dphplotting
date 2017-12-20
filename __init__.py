@@ -121,7 +121,7 @@ def display_grid(data, showcontour=False, contourcolor='w', filter_size=None,
         else:
             if auto:
                 # calculate vmin, vmax
-                kwargs["vmin"], kwargs["vmax"] = auto_adjust(v)
+                kwargs.update(auto_adjust(v))
             ax.matshow(v, **kwargs)
             if showcontour:
                 if filter_size is None:
@@ -428,7 +428,7 @@ def auto_adjust(img):
         vmin = img.min()
         vmax = img.max()
 
-    return (vmin, vmax)
+    return dict(vmin=vmin, vmax=vmax)
 
 
 def wavelength_to_rgb(wavelength, gamma=0.8):
