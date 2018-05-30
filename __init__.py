@@ -9,8 +9,13 @@ import numpy as np
 import warnings
 from functools import partial
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 from matplotlib.collections import LineCollection
-from matplotlib.colors import ListedColormap, BoundaryNorm, Colormap
+from matplotlib.colors import ListedColormap, BoundaryNorm, Colormap, LogNorm, PowerNorm
+import matplotlib.font_manager as fm
+import mpl_toolkits.axes_grid1.inset_locator
+from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
+import mpl_toolkits.axes_grid1 as mpl
 # fancy subplot layout
 import matplotlib.gridspec as gridspec
 from dphutils import fft_gaussian_filter
@@ -40,6 +45,7 @@ See also: plt.streamplot
 '''
 
 # Data manipulation:
+
 
 def make_segments(x, y):
     '''
@@ -87,7 +93,8 @@ def colorline(x, y, z=None, cmap='inferno', norm=plt.Normalize(0.0, 1.0), linewi
 
 
 def display_grid(data, showcontour=False, contourcolor='w', filter_size=None,
-                 figsize=3, auto=False, nrows=None, grid_aspect=None, **kwargs):
+                 figsize=3, auto=False, nrows=None, grid_aspect=None, sharex=False, sharey=False,
+                 **kwargs):
     '''
     Display a dictionary of images in a nice grid
 
@@ -114,7 +121,7 @@ def display_grid(data, showcontour=False, contourcolor='w', filter_size=None,
         else:
             grid_aspect = 1
     fig, axs = make_grid(len(data), nrows=nrows, figsize=figsize,
-                         grid_aspect=grid_aspect)
+                         grid_aspect=grid_aspect, sharex=sharex, sharey=sharey)
     for (k, v), ax in zip(sorted(data.items()), axs.ravel()):
         if v.ndim == 1:
             ax.plot(v, **kwargs)
@@ -471,3 +478,133 @@ def wavelength_to_rgb(wavelength, gamma=0.8):
         G = 0.0
         B = 0.0
     return (R, G, B)
+
+
+def max_min(n, d):
+    return np.array((-n // 2, (n - 1) // 2 + n % 2)) * d
+
+
+def fft_max_min(n, d):
+    step_size = 1 / d / n
+    return max_min(n, step_size)
+
+
+def add_scalebar(ax, scalebar_length, unit="µm"):
+    default_scale_bar_kwargs = dict(
+        loc='lower left',
+        pad=0.5,
+        color='white',
+        frameon=False,
+        size_vertical=scalebar_length / 10,
+        fontproperties=fm.FontProperties(size="large", weight="bold")
+    )
+    scalebar = AnchoredSizeBar(ax.transData,
+                               scalebar_length,
+                               '{} {}'.format(scalebar_length, unit),
+                               **default_scale_bar_kwargs
+                               )
+    # add the scalebar
+    ax.add_artist(scalebar)
+
+
+def z_squeeze(n1, n2, NA=0.85):
+    """Amount z expands or contracts when using an objective designed
+    for one index (n1) to image into a medium with another index (n2)"""
+    def func(n):
+        return n - np.sqrt(n**2 - NA**2)
+    return func(n1) / func(n2)
+
+
+def psf_plot(psf, NA=0.85, nobj=1.0, nsample=1.3, zstep=0.25, pixel_size=0.13,
+             fig=None, loc=111, **kwargs):
+    # expand z step
+    zstep *= z_squeeze(nobj, nsample, NA)
+    # update our default kwargs for plotting
+    dkwargs = dict(norm=LogNorm(), interpolation="nearest", cmap="inferno")
+    dkwargs.update(kwargs)
+    # make the fig if one isn't passed
+    if fig is None:
+        fig = plt.figure(None, (8., 8.))
+
+    grid = mpl.ImageGrid(fig, loc,
+                         nrows_ncols=(2, 2),
+                         axes_pad=0.3,
+                         )
+    # calc extents
+    nz, ny, nx = psf.shape
+    kz, ky, kx = [max_min(n, d) for n, d in zip(psf.shape, (zstep, pixel_size, pixel_size))]
+
+    # do plotting
+    grid[3].imshow(psf.max(0), **dkwargs, extent=(*kx, *ky))
+    grid[2].imshow(psf.max(1).T, **dkwargs, extent=(*kz, *ky))
+    grid[1].imshow(psf.max(2), **dkwargs, extent=(*kx, *kz))
+    grid[0].remove()
+
+    fd = {'fontsize': 16,
+          'fontweight': "bold"}
+    # add titles
+    grid[3].set_title("$XY$", fd)
+    grid[2].set_title("$YZ$", fd)
+    grid[1].set_title("$XZ$", fd)
+    # remove ticks
+    for g in grid:
+        g.set_xticks([])
+        g.set_yticks([])
+    # add scalebar
+    add_scalebar(grid[3], 1)
+    # return fig and axes
+    return fig, grid
+
+
+def otf_plot(otf, NA=0.85, wl=0.52, nobj=1.0, nsample=1.3, zstep=0.25, pixel_size=0.13, fig=None, loc=111, **kwargs):
+
+    # expand z step
+    zstep *= z_squeeze(nobj, nsample, NA)
+    # update our default kwargs for plotting
+    dkwargs = dict(norm=LogNorm(), interpolation="nearest", cmap="inferno")
+    dkwargs.update(kwargs)
+    # make the fig if one isn't passed
+    if fig is None:
+        fig = plt.figure(None, (8., 8.))
+
+    grid = mpl.ImageGrid(fig, loc,
+                         nrows_ncols=(2, 2),
+                         axes_pad=0.3,
+                         )
+    
+    nz, ny, nx = otf.shape
+    kz, ky, kx = [fft_max_min(n, d) for n, d in zip(otf.shape, (zstep, pixel_size, pixel_size))]
+    
+    grid[3].imshow(otf[nz // 2, :, :], **dkwargs, extent=(*kx, *ky))
+    grid[2].imshow(otf[:, ny // 2, :].T, **dkwargs, extent=(*kz, *ky))
+    grid[1].imshow(otf[:, :, nx // 2], **dkwargs, extent=(*kx, *kz))
+    grid[0].remove()
+    fd = {'fontsize': 16,
+          'fontweight': "bold"}
+    grid[3].set_title("$k_{XY}$", fd)
+    grid[2].set_title("$k_{YZ}$", fd)
+    grid[1].set_title("$k_{XZ}$", fd)
+    
+    for g in grid:
+        g.set_xticks([])
+        g.set_yticks([])
+
+    # calculate the angle of the marginal rays
+    a = np.arcsin(NA / nsample)
+    # make a circle of the OTF limits
+    c = patches.Circle((0, 0), 2 * NA / wl, ec="w", lw=2, fill=None)
+    grid[3].add_patch(c)
+    # add bowties
+    n_l = nsample / wl
+    for b, g in zip((0, np.pi / 2), grid[1:3]):
+        for j in (0, np.pi):
+            for i in (0, np.pi):
+                c2 = patches.Wedge((n_l * np.sin(a + b + j), n_l * np.cos(a + b + i)), n_l,
+                                   np.rad2deg(-a - np.pi / 2 + i * np.cos(b) - (j + np.pi) * np.sin(b) + b),
+                                   np.rad2deg(a - np.pi / 2 + i * np.cos(b) - (j + np.pi) * np.sin(b) + b),
+                                   width=0, ec="w", lw=1, fill=None)
+                g.add_patch(c2)
+    # add scalebar
+    add_scalebar(grid[3], 1, "µm$^{-1}$")
+
+    return fig, grid
