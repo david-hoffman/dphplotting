@@ -61,7 +61,7 @@ def make_segments(x, y):
 
 # Interface to LineCollection:
 
-def colorline(x, y, z=None, cmap='inferno', norm=plt.Normalize(0.0, 1.0), linewidth=3, alpha=1.0, ax=None):
+def colorline(x, y, z=None, cmap='inferno', norm=plt.Normalize(0.0, 1.0), linewidth=3, alpha=1.0, ax=None, autoscale=True):
     '''
     Plot a colored line with coordinates x and y
     Optionally specify colors in the array z
@@ -84,10 +84,14 @@ def colorline(x, y, z=None, cmap='inferno', norm=plt.Normalize(0.0, 1.0), linewi
     segments = make_segments(x, y)
     lc = LineCollection(segments, array=z, cmap=cmap, norm=norm, linewidth=linewidth, alpha=alpha)
     
+    lc.set_capstyle("round")
+
     if ax is None:
         ax = plt.gca()
     ax.add_collection(lc)
-    ax.autoscale()
+
+    if autoscale:
+        ax.autoscale()
     
     return lc
 
@@ -489,18 +493,20 @@ def fft_max_min(n, d):
     return max_min(n, step_size)
 
 
-def add_scalebar(ax, scalebar_length, unit="µm"):
+def add_scalebar(ax, scalebar_size, pixel_size, unit="µm", **kwargs):
+    scalebar_length = scalebar_size / pixel_size
     default_scale_bar_kwargs = dict(
-        loc='lower left',
+        loc='lower right',
         pad=0.5,
         color='white',
         frameon=False,
         size_vertical=scalebar_length / 10,
         fontproperties=fm.FontProperties(size="large", weight="bold")
     )
+    default_scale_bar_kwargs.update(kwargs)
     scalebar = AnchoredSizeBar(ax.transData,
                                scalebar_length,
-                               '{} {}'.format(scalebar_length, unit),
+                               '{} {}'.format(scalebar_size, unit),
                                **default_scale_bar_kwargs
                                )
     # add the scalebar
