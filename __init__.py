@@ -442,6 +442,7 @@ def auto_adjust(img):
     return dict(vmin=vmin, vmax=vmax)
 
 
+# @np.vectorize
 def wavelength_to_rgb(wavelength, gamma=0.8):
     """This converts a given wavelength of light to an
     approximate RGB color value. The wavelength must be given
@@ -494,6 +495,7 @@ def fft_max_min(n, d):
 
 
 def add_scalebar(ax, scalebar_size, pixel_size, unit="µm", **kwargs):
+    """Add a scalebar to the axis"""
     scalebar_length = scalebar_size / pixel_size
     default_scale_bar_kwargs = dict(
         loc='lower right',
@@ -503,10 +505,14 @@ def add_scalebar(ax, scalebar_size, pixel_size, unit="µm", **kwargs):
         size_vertical=scalebar_length / 10,
         fontproperties=fm.FontProperties(size="large", weight="bold")
     )
+    if unit is not None:
+        label = '{} {}'.format(scalebar_size, unit)
+    else:
+        label = ""
     default_scale_bar_kwargs.update(kwargs)
     scalebar = AnchoredSizeBar(ax.transData,
                                scalebar_length,
-                               '{} {}'.format(scalebar_size, unit),
+                               label,
                                **default_scale_bar_kwargs
                                )
     # add the scalebar
