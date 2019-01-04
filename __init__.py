@@ -1,23 +1,30 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# __init__.py
 """
-Created on Tue Jun 16 18:31:00 2015
+Plotting utilities
 
-@author: david
+Copyright (c) 2018, David Hoffman
 """
 
 import numpy as np
 import warnings
 from functools import partial
+
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-from matplotlib.collections import LineCollection
-from matplotlib.colors import ListedColormap, BoundaryNorm, Colormap, LogNorm, PowerNorm
 import matplotlib.font_manager as fm
+from matplotlib import cbook
+from matplotlib.collections import LineCollection
+from matplotlib.colors import ListedColormap, BoundaryNorm, Colormap, LogNorm, PowerNorm, Normalize
+
 import mpl_toolkits.axes_grid1.inset_locator
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 import mpl_toolkits.axes_grid1 as mpl
+
 # fancy subplot layout
 import matplotlib.gridspec as gridspec
+
 from dphutils import fft_gaussian_filter
 try:
     from pyfftw.interfaces.numpy_fft import rfftn, rfftfreq
@@ -55,7 +62,7 @@ def make_segments(x, y):
 
     points = np.array([x, y]).T.reshape(-1, 1, 2)
     segments = np.concatenate([points[:-1], points[1:]], axis=1)
-    
+
     return segments
 
 
@@ -67,23 +74,23 @@ def colorline(x, y, z=None, cmap='inferno', norm=plt.Normalize(0.0, 1.0), linewi
     Optionally specify colors in the array z
     Optionally specify a colormap, a norm function and a line width
     '''
-    
+
     if not isinstance(cmap, Colormap):
         cmap = plt.get_cmap(cmap)
 
     # Default colors equally spaced on [0,1]:
     if z is None:
         z = np.linspace(0.0, 1.0, len(x))
-           
+
     # Special case if a single number:
     if not hasattr(z, "__iter__"):  # to check for numerical input -- this is a hack
         z = np.array([z])
-        
+
     z = np.asarray(z)
-    
+
     segments = make_segments(x, y)
     lc = LineCollection(segments, array=z, cmap=cmap, norm=norm, linewidth=linewidth, alpha=alpha)
-    
+
     lc.set_capstyle("round")
 
     if ax is None:
@@ -92,7 +99,7 @@ def colorline(x, y, z=None, cmap='inferno', norm=plt.Normalize(0.0, 1.0), linewi
 
     if autoscale:
         ax.autoscale()
-    
+
     return lc
 
 
@@ -583,10 +590,10 @@ def otf_plot(otf, NA=0.85, wl=0.52, nobj=1.0, nsample=1.3, zstep=0.25, pixel_siz
                          nrows_ncols=(2, 2),
                          axes_pad=0.3,
                          )
-    
+
     nz, ny, nx = otf.shape
     kz, ky, kx = [fft_max_min(n, d) for n, d in zip(otf.shape, (zstep, pixel_size, pixel_size))]
-    
+
     grid[3].imshow(otf[nz // 2, :, :], **dkwargs, extent=(*kx, *ky))
     grid[2].imshow(otf[:, ny // 2, :].T, **dkwargs, extent=(*kz, *ky))
     grid[1].imshow(otf[:, :, nx // 2], **dkwargs, extent=(*kx, *kz))
@@ -596,7 +603,7 @@ def otf_plot(otf, NA=0.85, wl=0.52, nobj=1.0, nsample=1.3, zstep=0.25, pixel_siz
     grid[3].set_title("$k_{XY}$", fd)
     grid[2].set_title("$k_{YZ}$", fd)
     grid[1].set_title("$k_{XZ}$", fd)
-    
+
     for g in grid:
         g.set_xticks([])
         g.set_yticks([])
@@ -620,3 +627,78 @@ def otf_plot(otf, NA=0.85, wl=0.52, nobj=1.0, nsample=1.3, zstep=0.25, pixel_siz
     add_scalebar(grid[3], 1, "µm$^{-1}$")
 
     return fig, grid
+
+
+class SymPowerNorm(Normalize):
+    """
+    Linearly map a given value to the 0-1 range and then apply
+    a power-law normalization over that range.
+    """
+    def __init__(self, gamma, vmin=None, vmax=None, clip=False):
+        Normalize.__init__(self, vmin, vmax, clip)
+        self.gamma = gamma
+
+    def _transform(self, value):
+        return np.sign(value) * np.abs(value) ** self.gamma
+
+    def _transform_inv(self, value):
+        return np.sign(value) * np.abs(value) ** (1 / self.gamma)
+
+    def __call__(self, value, clip=None):
+        if clip is None:
+            clip = self.clip
+
+        result, is_scalar = self.process_value(value)
+
+        self.autoscale_None(result)
+        gamma = self.gamma
+        vmin, vmax = self.vmin, self.vmax
+        if vmin > vmax:
+            raise ValueError("minvalue must be less than or equal to maxvalue")
+        elif vmin == vmax:
+            result.fill(0)
+        else:
+            if clip:
+                mask = np.ma.getmask(result)
+                result = np.ma.array(np.clip(result.filled(vmax), vmin, vmax),
+                                     mask=mask)
+            resdat = result.data
+            resdat = self._transform(resdat)
+            vmin = self._transform(vmin)
+            vmax = self._transform(vmax)
+            resdat = (resdat - vmin) / (vmax - vmin)
+
+            result = np.ma.array(resdat, mask=result.mask, copy=False)
+        if is_scalar:
+            result = result[0]
+        return result
+
+    def inverse(self, value):
+        if not self.scaled():
+            raise ValueError("Not invertible until scaled")
+        gamma = self.gamma
+        vmin, vmax = self.vmin, self.vmax
+
+        vmin = self._transform(vmin)
+        vmax = self._transform(vmax)
+
+        if cbook.iterable(value):
+            val = np.ma.asarray(value)
+            return self._transform_inv(val * (vmax - vmin) + vmin)
+        else:
+            return self._transform_inv(value * (vmax - vmin) + vmin)
+
+    def autoscale(self, A):
+        """
+        Set *vmin*, *vmax* to min, max of *A*.
+        """
+        self.vmin = np.ma.min(A)
+        self.vmax = np.ma.max(A)
+
+    def autoscale_None(self, A):
+        """autoscale only None-valued vmin or vmax."""
+        A = np.asanyarray(A)
+        if self.vmin is None and A.size:
+            self.vmin = A.min()
+        if self.vmax is None and A.size:
+            self.vmax = A.max()
