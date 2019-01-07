@@ -501,7 +501,7 @@ def fft_max_min(n, d):
     return max_min(n, step_size)
 
 
-def add_scalebar(ax, scalebar_size, pixel_size, unit="µm", **kwargs):
+def add_scalebar(ax, scalebar_size, pixel_size, unit="µm", edgecolor=None, **kwargs):
     """Add a scalebar to the axis"""
     scalebar_length = scalebar_size / pixel_size
     default_scale_bar_kwargs = dict(
@@ -512,16 +512,20 @@ def add_scalebar(ax, scalebar_size, pixel_size, unit="µm", **kwargs):
         size_vertical=scalebar_length / 10,
         fontproperties=fm.FontProperties(size="large", weight="bold")
     )
+    default_scale_bar_kwargs.update(kwargs)
     if unit is not None:
         label = '{} {}'.format(scalebar_size, unit)
     else:
-        label = ""
-    default_scale_bar_kwargs.update(kwargs)
+        label = None
+        if "lower" in default_scale_bar_kwargs["loc"]:
+            default_scale_bar_kwargs["label_top"] = True
     scalebar = AnchoredSizeBar(ax.transData,
                                scalebar_length,
                                label,
                                **default_scale_bar_kwargs
                                )
+    if edgecolor:
+        scalebar.size_bar.get_children()[0].set_edgecolor(edgecolor)
     # add the scalebar
     ax.add_artist(scalebar)
 
