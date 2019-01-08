@@ -516,7 +516,7 @@ def add_scalebar(ax, scalebar_size, pixel_size, unit="µm", edgecolor=None, **kw
     if unit is not None:
         label = '{} {}'.format(scalebar_size, unit)
     else:
-        label = None
+        label = ""
         if "lower" in default_scale_bar_kwargs["loc"]:
             default_scale_bar_kwargs["label_top"] = True
     scalebar = AnchoredSizeBar(ax.transData,
