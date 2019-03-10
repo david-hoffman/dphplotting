@@ -706,3 +706,31 @@ class SymPowerNorm(Normalize):
             self.vmin = A.min()
         if self.vmax is None and A.size:
             self.vmax = A.max()
+
+def hist_and_cumulative(data, ax=None, log=False):
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.get_figure()
+
+    if log:
+        bins = np.logspace(np.log10(data.min()), np.log10(data.max()), 64)
+    else:
+        bins = "auto"
+    ax.hist(data, bins=bins, density=True, log=False, histtype="step")
+    ax.set_ylabel("PDF")
+    if log:
+        ax.set_xscale("log")
+
+    sorted_data = np.sort(data)
+    N = len(sorted_data)
+    b = np.arange(N) / N
+
+    twin_ax = ax.twinx()
+    color = ax._get_lines.get_next_color()
+    twin_ax.plot(sorted_data, b, color=color, ls="steps-mid")
+    twin_ax.tick_params(axis='y', labelcolor=color)
+    twin_ax.set_ylabel("CDF", color=color)
+    twin_ax.set_ylim(bottom=0)
+
+    return fig, (ax, twin_ax)
