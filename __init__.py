@@ -14,6 +14,7 @@ from functools import partial
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.font_manager as fm
+import matplotlib.patheffects as path_effects
 from matplotlib import cbook
 from matplotlib.collections import LineCollection
 from matplotlib.colors import ListedColormap, BoundaryNorm, Colormap, LogNorm, PowerNorm, Normalize
@@ -526,8 +527,10 @@ def add_scalebar(ax, scalebar_size, pixel_size, unit="µm", edgecolor=None, **kw
                                )
     if edgecolor:
         scalebar.size_bar.get_children()[0].set_edgecolor(edgecolor)
+        scalebar.txt_label.get_children()[0].set_path_effects([path_effects.Stroke(linewidth=2, foreground=edgecolor), path_effects.Normal()])
     # add the scalebar
     ax.add_artist(scalebar)
+    return scalebar
 
 
 def z_squeeze(n1, n2, NA=0.85):
@@ -543,7 +546,7 @@ def psf_plot(psf, NA=0.85, nobj=1.0, nsample=1.3, zstep=0.25, pixel_size=0.13,
     # expand z step
     zstep *= z_squeeze(nobj, nsample, NA)
     # update our default kwargs for plotting
-    dkwargs = dict(norm=LogNorm(), interpolation="nearest", cmap="inferno")
+    dkwargs = dict(interpolation="nearest", cmap="inferno")
     dkwargs.update(kwargs)
     # make the fig if one isn't passed
     if fig is None:
@@ -561,7 +564,7 @@ def psf_plot(psf, NA=0.85, nobj=1.0, nsample=1.3, zstep=0.25, pixel_size=0.13,
     grid[3].imshow(psf.max(0), **dkwargs, extent=(*kx, *ky))
     grid[2].imshow(psf.max(1).T, **dkwargs, extent=(*kz, *ky))
     grid[1].imshow(psf.max(2), **dkwargs, extent=(*kx, *kz))
-    grid[0].remove()
+    grid[0].axis("off")
 
     fd = {'fontsize': 16,
           'fontweight': "bold"}
@@ -574,7 +577,7 @@ def psf_plot(psf, NA=0.85, nobj=1.0, nsample=1.3, zstep=0.25, pixel_size=0.13,
         g.set_xticks([])
         g.set_yticks([])
     # add scalebar
-    add_scalebar(grid[3], 1)
+    add_scalebar(grid[3], 1, 1, None)
     # return fig and axes
     return fig, grid
 
@@ -596,6 +599,7 @@ def otf_plot(otf, NA=0.85, wl=0.52, nobj=1.0, nsample=1.3, zstep=0.25, pixel_siz
                          )
 
     nz, ny, nx = otf.shape
+    assert nx == ny
     kz, ky, kx = [fft_max_min(n, d) for n, d in zip(otf.shape, (zstep, pixel_size, pixel_size))]
 
     grid[3].imshow(otf[nz // 2, :, :], **dkwargs, extent=(*kx, *ky))
@@ -628,7 +632,7 @@ def otf_plot(otf, NA=0.85, wl=0.52, nobj=1.0, nsample=1.3, zstep=0.25, pixel_siz
                                    width=0, ec="w", lw=1, fill=None)
                 g.add_patch(c2)
     # add scalebar
-    add_scalebar(grid[3], 1, "µm$^{-1}$")
+    add_scalebar(grid[3], 1, 1, None)
 
     return fig, grid
 
@@ -718,7 +722,7 @@ def hist_and_cumulative(data, ax=None, log=False):
     else:
         bins = "auto"
     ax.hist(data, bins=bins, density=True, log=False, histtype="step")
-    ax.set_ylabel("PDF")
+    ax.set_ylabel("Probability Density Function (PDF)")
     if log:
         ax.set_xscale("log")
 
@@ -730,7 +734,12 @@ def hist_and_cumulative(data, ax=None, log=False):
     color = ax._get_lines.get_next_color()
     twin_ax.plot(sorted_data, b, color=color, ls="steps-mid")
     twin_ax.tick_params(axis='y', labelcolor=color)
-    twin_ax.set_ylabel("CDF", color=color)
+    twin_ax.set_ylabel("Cumulative Distribution Function (CDF)", color=color)
     twin_ax.set_ylim(bottom=0)
 
     return fig, (ax, twin_ax)
+
+# snippets
+# sc = fits.plot.scatter("x0", "y0", c="SNR", marker="o", norm=mpl.colors.LogNorm(), edgecolors="face", facecolors="None", ax=ax)
+# marks = sc.get_children()[0]
+# marks.set_facecolor("none")
