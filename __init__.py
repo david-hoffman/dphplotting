@@ -9,6 +9,7 @@ Copyright (c) 2018, David Hoffman
 
 import numpy as np
 import warnings
+import textwrap
 from functools import partial
 
 import matplotlib.pyplot as plt
@@ -155,6 +156,14 @@ def display_grid(data, showcontour=False, contourcolor='w', filter_size=None,
     clean_grid(fig, axs)
 
     return fig, axs
+
+
+def wrap_name(dirname, figsize):
+    '''wrap name to fit in subfig'''
+    fontsize = plt.rcParams['font.size']
+    # 1/120 = inches/(fontsize*character)
+    num_chars = int(figsize / fontsize * 72)
+    return textwrap.fill(dirname, num_chars)
 
 
 def make_grid(numitems, nrows=None, figsize=3, grid_aspect=1, **kwargs):
@@ -511,7 +520,7 @@ def add_scalebar(ax, scalebar_size, pixel_size, unit="µm", edgecolor=None, **kw
         color='white',
         frameon=False,
         size_vertical=scalebar_length / 10,
-        fontproperties=fm.FontProperties(size="large", weight="bold")
+        fontproperties=fm.FontProperties(weight="bold")
     )
     default_scale_bar_kwargs.update(kwargs)
     if unit is not None:
