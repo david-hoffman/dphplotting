@@ -28,9 +28,11 @@ import mpl_toolkits.axes_grid1 as mpl
 import matplotlib.gridspec as gridspec
 
 from dphutils import fft_gaussian_filter
+
 try:
     from pyfftw.interfaces.numpy_fft import rfftn, rfftfreq
     import pyfftw
+
     # Turn on the cache for optimum performance
     pyfftw.interfaces.cache.enable()
 except ImportError:
@@ -38,7 +40,7 @@ except ImportError:
 
 
 # Topics: line, color, LineCollection, cmap, colorline, codex
-'''
+"""
 Defines a function colorline that draws a (multi-)colored 2D line with coordinates x and y.
 The color is taken from optional data in z, and creates a LineCollection.
 
@@ -51,16 +53,16 @@ z can be:
 The function colorline returns the LineCollection created, which can be modified afterwards.
 
 See also: plt.streamplot
-'''
+"""
 
 # Data manipulation:
 
 
 def make_segments(x, y):
-    '''
+    """
     Create list of line segments from x and y coordinates, in the correct format for LineCollection:
     an array of the form   numlines x (points per line) x 2 (x and y) array
-    '''
+    """
 
     points = np.array([x, y]).T.reshape(-1, 1, 2)
     segments = np.concatenate([points[:-1], points[1:]], axis=1)
@@ -70,12 +72,23 @@ def make_segments(x, y):
 
 # Interface to LineCollection:
 
-def colorline(x, y, z=None, cmap='inferno', norm=plt.Normalize(0.0, 1.0), linewidth=3, alpha=1.0, ax=None, autoscale=True):
-    '''
+
+def colorline(
+    x,
+    y,
+    z=None,
+    cmap="inferno",
+    norm=plt.Normalize(0.0, 1.0),
+    linewidth=3,
+    alpha=1.0,
+    ax=None,
+    autoscale=True,
+):
+    """
     Plot a colored line with coordinates x and y
     Optionally specify colors in the array z
     Optionally specify a colormap, a norm function and a line width
-    '''
+    """
 
     if not isinstance(cmap, Colormap):
         cmap = plt.get_cmap(cmap)
@@ -105,10 +118,20 @@ def colorline(x, y, z=None, cmap='inferno', norm=plt.Normalize(0.0, 1.0), linewi
     return lc
 
 
-def display_grid(data, showcontour=False, contourcolor='w', filter_size=None,
-                 figsize=3, auto=False, nrows=None, grid_aspect=None, sharex=False, sharey=False,
-                 **kwargs):
-    '''
+def display_grid(
+    data,
+    showcontour=False,
+    contourcolor="w",
+    filter_size=None,
+    figsize=3,
+    auto=False,
+    nrows=None,
+    grid_aspect=None,
+    sharex=False,
+    sharey=False,
+    **kwargs
+):
+    """
     Display a dictionary of images in a nice grid
 
     Parameters
@@ -117,24 +140,29 @@ def display_grid(data, showcontour=False, contourcolor='w', filter_size=None,
         a dictionary of images
     showcontour: bool (default, False)
         Whether to show contours or not
-    '''
+    """
     if not isinstance(data, dict):
-        raise TypeError('Data is not a dictionary!')
+        raise TypeError("Data is not a dictionary!")
     # figure out grid_aspect ratios of data (a = y / x)
     if grid_aspect is None:
-        aspects = np.array([
-            v.shape[0] / v.shape[1] for v in data.values() if v.ndim > 1
-        ])
+        aspects = np.array([v.shape[0] / v.shape[1] for v in data.values() if v.ndim > 1])
         # if len is zero then everything was 1d
         if len(aspects):
             grid_aspect = aspects.mean()
             if not np.isfinite(grid_aspect):
                 raise RuntimeError(
-                    "grid_aspect isn't finite, grid_aspect = {}".format(grid_aspect))
+                    "grid_aspect isn't finite, grid_aspect = {}".format(grid_aspect)
+                )
         else:
             grid_aspect = 1
-    fig, axs = make_grid(len(data), nrows=nrows, figsize=figsize,
-                         grid_aspect=grid_aspect, sharex=sharex, sharey=sharey)
+    fig, axs = make_grid(
+        len(data),
+        nrows=nrows,
+        figsize=figsize,
+        grid_aspect=grid_aspect,
+        sharex=sharex,
+        sharey=sharey,
+    )
     for (k, v), ax in zip(sorted(data.items()), axs.ravel()):
         if v.ndim == 1:
             ax.plot(v, **kwargs)
@@ -151,7 +179,7 @@ def display_grid(data, showcontour=False, contourcolor='w', filter_size=None,
 
                 ax.contour(vv, colors=contourcolor)
         ax.set_title(k)
-        ax.axis('off')
+        ax.axis("off")
 
     clean_grid(fig, axs)
 
@@ -159,8 +187,8 @@ def display_grid(data, showcontour=False, contourcolor='w', filter_size=None,
 
 
 def wrap_name(dirname, figsize):
-    '''wrap name to fit in subfig'''
-    fontsize = plt.rcParams['font.size']
+    """wrap name to fit in subfig"""
+    fontsize = plt.rcParams["font.size"]
     # 1/120 = inches/(fontsize*character)
     num_chars = int(figsize / fontsize * 72)
     return textwrap.fill(dirname, num_chars)
@@ -177,8 +205,11 @@ def make_grid(numitems, nrows=None, figsize=3, grid_aspect=1, **kwargs):
         ncols = int(np.ceil(numitems / nrows))
 
     fig, axs = plt.subplots(
-        nrows, ncols, figsize=(figsize * ncols, figsize * nrows * grid_aspect),
-        squeeze=False, **kwargs
+        nrows,
+        ncols,
+        figsize=(figsize * ncols, figsize * nrows * grid_aspect),
+        squeeze=False,
+        **kwargs
     )
 
     return fig, axs
@@ -206,10 +237,10 @@ def slice_plot(data, center=None, allaxes=False, **kwargs):
     return mip(data, func=take_slice2, allaxes=allaxes, **kwargs)
 
 
-def recolor(cmap, ax=None, new_alpha=None, to_change='lines'):
-    '''
+def recolor(cmap, ax=None, new_alpha=None, to_change="lines"):
+    """
     Recolor the lines in ax with the cmap
-    '''
+    """
     if isinstance(cmap, str):
         # user has passed a string
         # presumably the name of a registered color map
@@ -222,13 +253,13 @@ def recolor(cmap, ax=None, new_alpha=None, to_change='lines'):
     num_objs = len(objs)
     # set the new alpha mapping, if wanted
     if new_alpha is not None:
-        if 'best' == new_alpha:
+        if "best" == new_alpha:
             r = 1 / num_objs
             try:
-                expon = new_alpha['best']
+                expon = new_alpha["best"]
             except TypeError:
                 expon = 2
-            new_alpha = 1 - ((1 - np.sqrt(r)) / (1 + np.sqrt(r)))**expon
+            new_alpha = 1 - ((1 - np.sqrt(r)) / (1 + np.sqrt(r))) ** expon
     # cycle through colors and recolor lines
     for i, obj in enumerate(objs):
         # generate new color
@@ -240,9 +271,10 @@ def recolor(cmap, ax=None, new_alpha=None, to_change='lines'):
         obj.set_color(new_color)
 
 
-def drift_plot(fit, title=None, dt=0.1, dx=130, lf=-np.inf, hf=np.inf,
-               log=False, cmap='magma', xc='b', yc='r'):
-    '''
+def drift_plot(
+    fit, title=None, dt=0.1, dx=130, lf=-np.inf, hf=np.inf, log=False, cmap="magma", xc="b", yc="r"
+):
+    """
     Plotting utility to show drift curves nicely
 
     Parameters
@@ -274,7 +306,7 @@ def drift_plot(fit, title=None, dt=0.1, dx=130, lf=-np.inf, hf=np.inf,
         The figure
     axs : tuple of axes objects
         In the following order, Real axis, FFT axis, Scatter axis
-    '''
+    """
     # set up plot
     fig = plt.figure()
     fig.set_size_inches(8, 4)
@@ -283,7 +315,7 @@ def drift_plot(fit, title=None, dt=0.1, dx=130, lf=-np.inf, hf=np.inf,
     axscatter = plt.subplot(122)
     # label it
     if title is not None:
-        fig.suptitle(title, y=1.02, fontweight='bold')
+        fig.suptitle(title, y=1.02, fontweight="bold")
     # detrend mean
     ybar = fit.y0 - fit.y0.mean()
     ybar *= dx
@@ -293,10 +325,10 @@ def drift_plot(fit, title=None, dt=0.1, dx=130, lf=-np.inf, hf=np.inf,
     t = np.arange(len(fit)) * dt
     axreal.plot(t, xbar, xc, label=r"$x_0$")
     axreal.plot(t, ybar, yc, label=r"$y_0$")
-    axreal.set_xlabel('Time (s)')
-    axreal.set_ylabel('Displacement (nm)')
+    axreal.set_xlabel("Time (s)")
+    axreal.set_ylabel("Displacement (nm)")
     # add legend to real axis
-    axreal.legend(loc='best')
+    axreal.legend(loc="best")
     # calc FFTs
     Y = rfftn(ybar)
     X = rfftn(xbar)
@@ -311,11 +343,11 @@ def drift_plot(fit, title=None, dt=0.1, dx=130, lf=-np.inf, hf=np.inf,
     else:
         axfft.plot(k[kg], abs(X[kg]), xc)
         axfft.plot(k[kg], abs(Y[kg]), yc)
-    axfft.set_xlabel('Frequency (Hz)')
+    axfft.set_xlabel("Frequency (Hz)")
     # Plot scatter
     axscatter.scatter(xbar, ybar, c=t, cmap=cmap)
-    axscatter.set_xlabel('x')
-    axscatter.set_ylabel('y')
+    axscatter.set_xlabel("x")
+    axscatter.set_ylabel("y")
     # make sure the scatter plot is square
     lims = axreal.get_ylim()
     axscatter.set_ylim(lims)
@@ -360,8 +392,12 @@ def mip(data, zaspect=1, func=np.amax, allaxes=False, plt_kwds=None, **kwargs):
     ndim = data.ndim
     # set up the grid for the subplots
     if ndim == 3:
-        gs = gridspec.GridSpec(2, 2, width_ratios=[1, myshape[0] * zaspect / myshape[2]],
-                               height_ratios=[1, myshape[0] * zaspect / myshape[1]])
+        gs = gridspec.GridSpec(
+            2,
+            2,
+            width_ratios=[1, myshape[0] * zaspect / myshape[2]],
+            height_ratios=[1, myshape[0] * zaspect / myshape[1]],
+        )
         # set up my canvas necessary to make the overall figure shape square,
         # without this the boxes aren't sized properly
         fig = plt.figure(figsize=(5 * myshape[2] / myshape[1], 5))
@@ -372,13 +408,13 @@ def mip(data, zaspect=1, func=np.amax, allaxes=False, plt_kwds=None, **kwargs):
         raise TypeError("Data has too many dimensions, ndim = {}".format(ndim))
     # set up each projection
     ax_xy = plt.subplot(gs[0])
-    ax_xy.set_title('XY')
+    ax_xy.set_title("XY")
     # set up YZ
     ax_yz = plt.subplot(gs[1], sharey=ax_xy)
-    ax_yz.set_title('YZ')
+    ax_yz.set_title("YZ")
     # set up XZ
     ax_xz = plt.subplot(gs[2], sharex=ax_xy)
-    ax_xz.set_title('XZ')
+    ax_xz.set_title("XZ")
     # actually calc data and plot
     if ndim == 3:
         max_z = func(data, axis=0)
@@ -408,7 +444,7 @@ def mip(data, zaspect=1, func=np.amax, allaxes=False, plt_kwds=None, **kwargs):
 
 
 def auto_adjust(img):
-    '''
+    """
     Python translation of ImageJ autoadjust function
 
     Parameters
@@ -418,7 +454,7 @@ def auto_adjust(img):
     Returns
     -------
     (vmin, vmax) : tuple of numbers
-    '''
+    """
     # calc statistics
     pixel_count = int(np.array((img.shape)).prod())
     # get image statistics
@@ -515,28 +551,26 @@ def add_scalebar(ax, scalebar_size, pixel_size, unit="µm", edgecolor=None, **kw
     """Add a scalebar to the axis"""
     scalebar_length = scalebar_size / pixel_size
     default_scale_bar_kwargs = dict(
-        loc='lower right',
+        loc="lower right",
         pad=0.5,
-        color='white',
+        color="white",
         frameon=False,
         size_vertical=scalebar_length / 10,
-        fontproperties=fm.FontProperties(weight="bold")
+        fontproperties=fm.FontProperties(weight="bold"),
     )
     default_scale_bar_kwargs.update(kwargs)
     if unit is not None:
-        label = '{} {}'.format(scalebar_size, unit)
+        label = "{} {}".format(scalebar_size, unit)
     else:
         label = ""
         if "lower" in default_scale_bar_kwargs["loc"]:
             default_scale_bar_kwargs["label_top"] = True
-    scalebar = AnchoredSizeBar(ax.transData,
-                               scalebar_length,
-                               label,
-                               **default_scale_bar_kwargs
-                               )
+    scalebar = AnchoredSizeBar(ax.transData, scalebar_length, label, **default_scale_bar_kwargs)
     if edgecolor:
         scalebar.size_bar.get_children()[0].set_edgecolor(edgecolor)
-        scalebar.txt_label.get_children()[0].set_path_effects([path_effects.Stroke(linewidth=2, foreground=edgecolor), path_effects.Normal()])
+        scalebar.txt_label.get_children()[0].set_path_effects(
+            [path_effects.Stroke(linewidth=2, foreground=edgecolor), path_effects.Normal()]
+        )
     # add the scalebar
     ax.add_artist(scalebar)
     return scalebar
@@ -545,13 +579,16 @@ def add_scalebar(ax, scalebar_size, pixel_size, unit="µm", edgecolor=None, **kw
 def z_squeeze(n1, n2, NA=0.85):
     """Amount z expands or contracts when using an objective designed
     for one index (n1) to image into a medium with another index (n2)"""
+
     def func(n):
-        return n - np.sqrt(n**2 - NA**2)
+        return n - np.sqrt(n ** 2 - NA ** 2)
+
     return func(n1) / func(n2)
 
 
-def psf_plot(psf, NA=0.85, nobj=1.0, nsample=1.3, zstep=0.25, pixel_size=0.13,
-             fig=None, loc=111, **kwargs):
+def psf_plot(
+    psf, NA=0.85, nobj=1.0, nsample=1.3, zstep=0.25, pixel_size=0.13, fig=None, loc=111, **kwargs
+):
     # expand z step
     zstep *= z_squeeze(nobj, nsample, NA)
     # update our default kwargs for plotting
@@ -559,12 +596,9 @@ def psf_plot(psf, NA=0.85, nobj=1.0, nsample=1.3, zstep=0.25, pixel_size=0.13,
     dkwargs.update(kwargs)
     # make the fig if one isn't passed
     if fig is None:
-        fig = plt.figure(None, (8., 8.))
+        fig = plt.figure(None, (8.0, 8.0))
 
-    grid = mpl.ImageGrid(fig, loc,
-                         nrows_ncols=(2, 2),
-                         axes_pad=0.3,
-                         )
+    grid = mpl.ImageGrid(fig, loc, nrows_ncols=(2, 2), axes_pad=0.3)
     # calc extents
     nz, ny, nx = psf.shape
     kz, ky, kx = [max_min(n, d) for n, d in zip(psf.shape, (zstep, pixel_size, pixel_size))]
@@ -575,8 +609,7 @@ def psf_plot(psf, NA=0.85, nobj=1.0, nsample=1.3, zstep=0.25, pixel_size=0.13,
     grid[1].imshow(psf.max(2), **dkwargs, extent=(*kx, *kz))
     grid[0].axis("off")
 
-    fd = {'fontsize': 16,
-          'fontweight': "bold"}
+    fd = {"fontsize": 16, "fontweight": "bold"}
     # add titles
     grid[3].set_title("$XY$", fd)
     grid[2].set_title("$YZ$", fd)
@@ -591,7 +624,18 @@ def psf_plot(psf, NA=0.85, nobj=1.0, nsample=1.3, zstep=0.25, pixel_size=0.13,
     return fig, grid
 
 
-def otf_plot(otf, NA=0.85, wl=0.52, nobj=1.0, nsample=1.3, zstep=0.25, pixel_size=0.13, fig=None, loc=111, **kwargs):
+def otf_plot(
+    otf,
+    NA=0.85,
+    wl=0.52,
+    nobj=1.0,
+    nsample=1.3,
+    zstep=0.25,
+    pixel_size=0.13,
+    fig=None,
+    loc=111,
+    **kwargs
+):
 
     # expand z step
     zstep *= z_squeeze(nobj, nsample, NA)
@@ -600,12 +644,9 @@ def otf_plot(otf, NA=0.85, wl=0.52, nobj=1.0, nsample=1.3, zstep=0.25, pixel_siz
     dkwargs.update(kwargs)
     # make the fig if one isn't passed
     if fig is None:
-        fig = plt.figure(None, (8., 8.))
+        fig = plt.figure(None, (8.0, 8.0))
 
-    grid = mpl.ImageGrid(fig, loc,
-                         nrows_ncols=(2, 2),
-                         axes_pad=0.3,
-                         )
+    grid = mpl.ImageGrid(fig, loc, nrows_ncols=(2, 2), axes_pad=0.3)
 
     nz, ny, nx = otf.shape
     assert nx == ny
@@ -615,8 +656,7 @@ def otf_plot(otf, NA=0.85, wl=0.52, nobj=1.0, nsample=1.3, zstep=0.25, pixel_siz
     grid[2].imshow(otf[:, ny // 2, :].T, **dkwargs, extent=(*kz, *ky))
     grid[1].imshow(otf[:, :, nx // 2], **dkwargs, extent=(*kx, *kz))
     grid[0].remove()
-    fd = {'fontsize': 16,
-          'fontweight': "bold"}
+    fd = {"fontsize": 16, "fontweight": "bold"}
     grid[3].set_title("$k_{XY}$", fd)
     grid[2].set_title("$k_{YZ}$", fd)
     grid[1].set_title("$k_{XZ}$", fd)
@@ -635,10 +675,16 @@ def otf_plot(otf, NA=0.85, wl=0.52, nobj=1.0, nsample=1.3, zstep=0.25, pixel_siz
     for b, g in zip((0, np.pi / 2), grid[1:3]):
         for j in (0, np.pi):
             for i in (0, np.pi):
-                c2 = patches.Wedge((n_l * np.sin(a + b + j), n_l * np.cos(a + b + i)), n_l,
-                                   np.rad2deg(-a - np.pi / 2 + i * np.cos(b) - (j + np.pi) * np.sin(b) + b),
-                                   np.rad2deg(a - np.pi / 2 + i * np.cos(b) - (j + np.pi) * np.sin(b) + b),
-                                   width=0, ec="w", lw=1, fill=None)
+                c2 = patches.Wedge(
+                    (n_l * np.sin(a + b + j), n_l * np.cos(a + b + i)),
+                    n_l,
+                    np.rad2deg(-a - np.pi / 2 + i * np.cos(b) - (j + np.pi) * np.sin(b) + b),
+                    np.rad2deg(a - np.pi / 2 + i * np.cos(b) - (j + np.pi) * np.sin(b) + b),
+                    width=0,
+                    ec="w",
+                    lw=1,
+                    fill=None,
+                )
                 g.add_patch(c2)
     # add scalebar
     add_scalebar(grid[3], 1, 1, None)
@@ -651,6 +697,7 @@ class SymPowerNorm(Normalize):
     Linearly map a given value to the 0-1 range and then apply
     a power-law normalization over that range.
     """
+
     def __init__(self, gamma, vmin=None, vmax=None, clip=False):
         Normalize.__init__(self, vmin, vmax, clip)
         self.gamma = gamma
@@ -677,8 +724,7 @@ class SymPowerNorm(Normalize):
         else:
             if clip:
                 mask = np.ma.getmask(result)
-                result = np.ma.array(np.clip(result.filled(vmax), vmin, vmax),
-                                     mask=mask)
+                result = np.ma.array(np.clip(result.filled(vmax), vmin, vmax), mask=mask)
             resdat = result.data
             resdat = self._transform(resdat)
             vmin = self._transform(vmin)
@@ -720,6 +766,7 @@ class SymPowerNorm(Normalize):
         if self.vmax is None and A.size:
             self.vmax = A.max()
 
+
 def hist_and_cumulative(data, ax=None, log=False):
     if ax is None:
         fig, ax = plt.subplots()
@@ -742,11 +789,12 @@ def hist_and_cumulative(data, ax=None, log=False):
     twin_ax = ax.twinx()
     color = ax._get_lines.get_next_color()
     twin_ax.plot(sorted_data, b, color=color, ls="steps-mid")
-    twin_ax.tick_params(axis='y', labelcolor=color)
+    twin_ax.tick_params(axis="y", labelcolor=color)
     twin_ax.set_ylabel("Cumulative Distribution Function (CDF)", color=color)
     twin_ax.set_ylim(bottom=0)
 
     return fig, (ax, twin_ax)
+
 
 # snippets
 # sc = fits.plot.scatter("x0", "y0", c="SNR", marker="o", norm=mpl.colors.LogNorm(), edgecolors="face", facecolors="None", ax=ax)
