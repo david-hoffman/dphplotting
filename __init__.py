@@ -228,7 +228,7 @@ def take_slice(data, axis, midpoint=None):
         midpoint = np.array(data.shape, dtype=np.int) // 2
     my_slice = [slice(None, None, None) for i in range(data.ndim)]
     my_slice[axis] = midpoint[axis]
-    return data[my_slice]
+    return data[tuple(my_slice)]
 
 
 def slice_plot(data, center=None, allaxes=False, **kwargs):
