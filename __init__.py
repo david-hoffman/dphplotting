@@ -580,8 +580,11 @@ def z_squeeze(n1, n2, NA=0.85):
     """Amount z expands or contracts when using an objective designed
     for one index (n1) to image into a medium with another index (n2)"""
 
+    if n1 == n2:
+        return 1
+
     def func(n):
-        return n - np.sqrt(n ** 2 - NA ** 2)
+        return n - np.sqrt(max(0, n ** 2 - NA ** 2))
 
     return func(n1) / func(n2)
 
@@ -616,8 +619,8 @@ def psf_plot(
     grid[1].set_title("$XZ$", fd)
     # remove ticks
     for g in grid:
-        g.set_xticks([])
-        g.set_yticks([])
+        g.xaxis.set_major_locator(plt.NullLocator())
+        g.yaxis.set_major_locator(plt.NullLocator())
     # add scalebar
     add_scalebar(grid[3], 1, 1, None)
     # return fig and axes
@@ -656,17 +659,17 @@ def otf_plot(
     grid[2].imshow(otf[:, ny // 2, :].T, **dkwargs, extent=(*kz, *ky))
     grid[1].imshow(otf[:, :, nx // 2], **dkwargs, extent=(*kx, *kz))
     grid[0].remove()
-    fd = {"fontsize": 16, "fontweight": "bold"}
+    fd = {"fontweight": "bold"}
     grid[3].set_title("$k_{XY}$", fd)
     grid[2].set_title("$k_{YZ}$", fd)
     grid[1].set_title("$k_{XZ}$", fd)
 
     for g in grid:
-        g.set_xticks([])
-        g.set_yticks([])
+        g.xaxis.set_major_locator(plt.NullLocator())
+        g.yaxis.set_major_locator(plt.NullLocator())
 
     # calculate the angle of the marginal rays
-    a = np.arcsin(NA / nsample)
+    a = np.arcsin(min(1, NA / nsample))
     # make a circle of the OTF limits
     c = patches.Circle((0, 0), 2 * NA / wl, ec="w", lw=2, fill=None)
     grid[3].add_patch(c)
