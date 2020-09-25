@@ -129,7 +129,7 @@ def display_grid(
     grid_aspect=None,
     sharex=False,
     sharey=False,
-    **kwargs
+    **kwargs,
 ):
     """
     Display a dictionary of images in a nice grid
@@ -150,9 +150,7 @@ def display_grid(
         if len(aspects):
             grid_aspect = aspects.mean()
             if not np.isfinite(grid_aspect):
-                raise RuntimeError(
-                    "grid_aspect isn't finite, grid_aspect = {}".format(grid_aspect)
-                )
+                raise RuntimeError(f"grid_aspect isn't finite, grid_aspect = {grid_aspect}")
         else:
             grid_aspect = 1
     fig, axs = make_grid(
@@ -209,7 +207,7 @@ def make_grid(numitems, nrows=None, figsize=3, grid_aspect=1, **kwargs):
         ncols,
         figsize=(figsize * ncols, figsize * nrows * grid_aspect),
         squeeze=False,
-        **kwargs
+        **kwargs,
     )
 
     return fig, axs
@@ -345,7 +343,7 @@ def drift_plot(
         axfft.plot(k[kg], abs(Y[kg]), yc)
     axfft.set_xlabel("Frequency (Hz)")
     # Plot scatter
-    axscatter.scatter(xbar, ybar, c=t, cmap=cmap)
+    axscatter.scatter(xbar, ybar, c=t, cmap=cmap, ec="k")
     axscatter.set_xlabel("x")
     axscatter.set_ylabel("y")
     # make sure the scatter plot is square
@@ -405,7 +403,7 @@ def mip(data, zaspect=1, func=np.amax, allaxes=False, plt_kwds=None, **kwargs):
         gs = gridspec.GridSpec(2, 2, width_ratios=[2, 1], height_ratios=[2, 1])
         fig = plt.figure(figsize=(5, 5))
     else:
-        raise TypeError("Data has too many dimensions, ndim = {}".format(ndim))
+        raise TypeError(f"Data has too many dimensions, ndim = {ndim}")
     # set up each projection
     ax_xy = plt.subplot(gs[0])
     ax_xy.set_title("XY")
@@ -560,7 +558,7 @@ def add_scalebar(ax, scalebar_size, pixel_size, unit="µm", edgecolor=None, **kw
     )
     default_scale_bar_kwargs.update(kwargs)
     if unit is not None:
-        label = "{} {}".format(scalebar_size, unit)
+        label = f"{scalebar_size} {unit}"
     else:
         label = ""
         if "lower" in default_scale_bar_kwargs["loc"]:
@@ -576,7 +574,7 @@ def add_scalebar(ax, scalebar_size, pixel_size, unit="µm", edgecolor=None, **kw
     return scalebar
 
 
-def z_squeeze(n1, n2, NA=0.85):
+def z_squeeze(n1, n2, na=0.85):
     """Amount z expands or contracts when using an objective designed
     for one index (n1) to image into a medium with another index (n2)"""
 
@@ -584,16 +582,28 @@ def z_squeeze(n1, n2, NA=0.85):
         return 1
 
     def func(n):
-        return n - np.sqrt(max(0, n ** 2 - NA ** 2))
+        return n - np.sqrt(max(0, n ** 2 - na ** 2))
 
     return func(n1) / func(n2)
 
 
 def psf_plot(
-    psf, NA=0.85, nobj=1.0, nsample=1.3, zstep=0.25, pixel_size=0.13, fig=None, loc=111, **kwargs
+    psf,
+    *,
+    na=0.85,
+    nobj=1.0,
+    nsample=None,
+    zstep=0.25,
+    pixel_size=0.13,
+    fig=None,
+    loc=111,
+    **kwargs,
 ):
+    """"""
+    if nsample is None:
+        nsample = nobj
     # expand z step
-    zstep *= z_squeeze(nobj, nsample, NA)
+    zstep *= z_squeeze(nobj, nsample, na)
     # update our default kwargs for plotting
     dkwargs = dict(interpolation="nearest", cmap="inferno")
     dkwargs.update(kwargs)
@@ -612,7 +622,7 @@ def psf_plot(
     grid[1].imshow(psf.max(2), **dkwargs, extent=(*kx, *kz))
     grid[0].axis("off")
 
-    fd = {"fontsize": 16, "fontweight": "bold"}
+    fd = {"fontweight": "bold"}
     # add titles
     grid[3].set_title("$XY$", fd)
     grid[2].set_title("$YZ$", fd)
@@ -629,21 +639,27 @@ def psf_plot(
 
 def otf_plot(
     otf,
-    NA=0.85,
+    na=0.85,
     wl=0.52,
     nobj=1.0,
-    nsample=1.3,
+    nsample=None,
     zstep=0.25,
     pixel_size=0.13,
     fig=None,
     loc=111,
-    **kwargs
+    **kwargs,
 ):
-
+    """"""
+    if nsample is None:
+        nsample = nobj
     # expand z step
-    zstep *= z_squeeze(nobj, nsample, NA)
+    zstep *= z_squeeze(nobj, nsample, na)
     # update our default kwargs for plotting
-    dkwargs = dict(norm=LogNorm(), interpolation="nearest", cmap="inferno")
+    dkwargs = dict(
+        norm=LogNorm(vmin=kwargs.pop("vmin", None), vmax=kwargs.pop("vmax", None)),
+        interpolation="nearest",
+        cmap="inferno",
+    )
     dkwargs.update(kwargs)
     # make the fig if one isn't passed
     if fig is None:
@@ -658,7 +674,8 @@ def otf_plot(
     grid[3].imshow(otf[nz // 2, :, :], **dkwargs, extent=(*kx, *ky))
     grid[2].imshow(otf[:, ny // 2, :].T, **dkwargs, extent=(*kz, *ky))
     grid[1].imshow(otf[:, :, nx // 2], **dkwargs, extent=(*kx, *kz))
-    grid[0].remove()
+    grid[0].axis("off")
+
     fd = {"fontweight": "bold"}
     grid[3].set_title("$k_{XY}$", fd)
     grid[2].set_title("$k_{YZ}$", fd)
@@ -669,9 +686,9 @@ def otf_plot(
         g.yaxis.set_major_locator(plt.NullLocator())
 
     # calculate the angle of the marginal rays
-    a = np.arcsin(min(1, NA / nsample))
+    a = np.arcsin(min(1, na / nsample))
     # make a circle of the OTF limits
-    c = patches.Circle((0, 0), 2 * NA / wl, ec="w", lw=2, fill=None)
+    c = patches.Circle((0, 0), 2 * na / wl, ec="w", lw=2, fill=None)
     grid[3].add_patch(c)
     # add bowties
     n_l = nsample / wl
@@ -797,6 +814,28 @@ def hist_and_cumulative(data, ax=None, log=False):
     twin_ax.set_ylim(bottom=0)
 
     return fig, (ax, twin_ax)
+
+
+def make_rec(y, x, width, height, linewidth):
+    """Make a rectangle of width and height _centered_ on (y, x)"""
+    return plt.Rectangle(
+        (x - width / 2, y - height / 2), width, height, color="w", linewidth=linewidth, fill=False
+    )
+
+
+def make_rec_from_slice(yxslice, **kwargs):
+    """Make a rectangle of width and height _centered_ on (y, x)"""
+
+    default_kwargs = dict(color="w", linewidth=1, fill=False)
+    default_kwargs.update(kwargs)
+
+    yslice, xslice = yxslice
+    xy = (xslice.start, yslice.start)
+
+    height = yslice.stop - yslice.start
+    width = xslice.stop - xslice.start
+
+    return plt.Rectangle(xy, width, height, **default_kwargs)
 
 
 # snippets
